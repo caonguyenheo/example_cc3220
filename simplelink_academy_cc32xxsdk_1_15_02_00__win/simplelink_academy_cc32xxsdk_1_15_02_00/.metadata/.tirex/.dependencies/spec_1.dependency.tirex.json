@@ -1,0 +1,24 @@
+[
+   {
+      "packages" : [],
+      "compiler" : {
+         "location" : "na",
+         "specified" : "na",
+         "effective" : "na"
+      },
+      "files" : [
+         "+../../src/app/project_zero.c -> Application/project_zero.c",
+         "+../../src/app/project_zero.h -> Application/project_zero.h",
+         "+../../src/services/button_service.c -> Profiles/button_service.c",
+         "+../../src/services/button_service.h -> Profiles/button_service.h",
+         "+../../src/services/data_service.c -> Profiles/data_service.c",
+         "+../../src/services/data_service.h -> Profiles/data_service.h",
+         "+../../src/services/led_service.c -> Profiles/led_service.c",
+         "+../../src/services/led_service.h -> Profiles/led_service.h",
+         "+../config/build_config.opt -> TOOLS/build_config.opt",
+         "+../../src/app/main.c -> Startup/main.c"
+      ],
+      "name" : "na",
+      "default" : "na"
+   }
+]

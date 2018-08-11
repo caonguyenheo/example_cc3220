@@ -1,0 +1,468 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>Portable + Wi-Fi</title>
+<link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/ubuntu-regular-woff.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/glyphicons-halflings-regular.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/united2.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/bootstrap-responsive.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/strapdown.css"><link rel="shortcut icon" type="image/x-icon" href="../../.metadata/favicon.ico"></head>
+
+<!-- START PRE -->
+
+
+
+
+
+
+<!-- END PRE -->
+
+<body style=""><div class="container"><nav class="navbar navbar-default navbar-static-top"><div class="container-fluid"> <div class="navbar-header">  <div id="headline" class="navbar-brand">Portable + Wi-Fi</div> </div> </div></nav><div class="container"><div class="row row-offcanvas row-offcanvas-left"><div class="col-xs-12 col-sm-9" id="content"><h1 id="introduction">Introduction</h1>
+<p>In this lab, we are going to add HTTP server functionality to the Portable
+project so users can read the temperature from a webpage hosted by the SimpleLink™ Wi-Fi® CC3220 device.</p>
+<p>The purpose of this lab is to demonstrate the portability of SimpleLink MCU
+Platform. The Portable project exists as a common example across all
+platforms, and we can implement Wi-Fi functionality by adding functions to this
+baseline example.</p>
+<h1 id="prerequisites">Prerequisites</h1>
+<h2 id="recommended-reading">Recommended Reading</h2>
+<ul>
+<li><a href="http://www.ti.com/lit/swru461">SimpleLink Wi-Fi CC3220 Getting Started Guide</a></li>
+<li><a href="http://www.ti.com/lit/swru455">SimpleLink Wi-Fi CC3120 and CC3220 Network Processor Programmer's Guide</a> Section 9: HTTP Server</li>
+</ul>
+<h2 id="software">Software</h2>
+<ul>
+<li><a href="http://www.ti.com/tool/ccstudio">Code Composer Studio</a> v7.4 or later<ul>
+<li>Must have SimpleLink CC3x Wireless MCU support</li>
+<li>Make sure that CCS is using the latest updates: <strong>Help → Check for Updates</strong></li>
+</ul>
+</li>
+<li><a href="http://www.ti.com/tool/simplelink-cc3220-sdk">CC3220 SDK v1.60.00.04</a> or later</li>
+<li><a href="http://www.ti.com/tool/UNIFLASH">UniFlash</a> v4.2.1.15 or later.</li>
+</ul>
+<h2 id="hardware">Hardware</h2>
+<ul>
+<li>SimpleLink Wi-Fi CC3220SF LaunchPad (<a href="http://www.ti.com/tool/cc3220sf-launchxl">CC3220SF-LAUNCHXL</a>) OR CC3220S LaunchPad (<a href="http://www.ti.com/tool/cc3220s-launchxl">CC3220S-LAUNCHXL</a>)</li>
+</ul>
+<h1 id="task-1-import-the-portable-example">Task 1: Import the Portable example</h1>
+<ol>
+<li>In CCS, open the TI Resource Explorer (<strong>View</strong> → <strong>Resource Explorer</strong>)</li>
+<li><p>Expand the folders as shown to select the Portable example, then click the <strong>Import to IDE</strong> icon at the top-right</p>
+<ul>
+<li>Be sure you select your desired project "flavor" (CC3220S-LAUNCHXL, CC3220SF-LAUNCHXL, TI-RTOS, Free-RTOS, CCS, GCC, etc)</li>
+<li><p>We will be using the TI-RTOS CCS example for this lab:<code>portable_CC3220SF_LAUNCHXL_tirtos_ccs</code></p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/portable_tirex.png" alt="TI Resource Explorer" class="img-responsive"></div><br><p></p>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Test out the Portable example!
+</span></h4>
+<p>Start a debug session in CCS and open a terminal to test the Portable example
+functionality. It uses the on-board sensor to report temperature via the
+terminal. Please see the <code>README.html</code> in the Portable project for more details.<br></p>
+</div>
+</li>
+</ul>
+</li>
+<li><p>You will also need to download some additional files for later in the lab. In Resource Explorer, you can find these files as shown. Click the <strong>Download and Install</strong> icon at the top right. This should install <code>simplelink_academy_cc32xxsdk_x_xx_xx_xx</code> to your <code>ti</code> folder.</p>
+<ul>
+<li>The path to the required files is: <code>simplelink_academy_cc32xxsdk_x_xx_xx_xx/modules/projects/wifi_portable</code></li>
+<li><p>These files include a source and header file for the HTTP server code and a source and header file that allows us to print to the terminal via UART. There are also ZIP files which are the UniFlash ImageCreator project sessions for S and SF devices.</p>
+<div class="bs-callout bs-callout-danger "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">ZIP files
+</span></h4>
+<p><b>Do not unzip these files.</b> We will need these later in ZIP format in order to program the device. The ZIP contains database files for UniFlash ImageCreator tool.</p>
+</div>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/portable_downloadfiles.png" alt="Download files" class="img-responsive"></div><br><p></p>
+</li>
+</ul>
+</li>
+</ol>
+<h1 id="task-2-set-up-the-portable-example-for-wi-fi">Task 2: Set up the Portable example for Wi-Fi</h1>
+<ol>
+<li><p>Right-click on the Portable project name and select
+<strong>Properties → Build → ARM Linker → File Search Path</strong></p>
+</li>
+<li><p>Click the document icon with the green plus next to <strong>"Include library file..."</strong></p>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/portable_include.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>Browse to your SimpleLink CC3220 SDK installation, then
+<code>source/ti/drivers/net/wifi/ccs/rtos/</code> and select <code>simplelink.a</code>. Select OK. This is the pre-built SimpleLink Wi-Fi library.</p>
+</li>
+<li><p>Add the provided <code>uart_term.h</code> and <code>uart_term.c</code> files to your Portable project. This code allows us to print format specifiers to the UART terminal. You can download these files from the project folder in Resource Explorer or copy them from another CC3220 example. Please see Task 1, Step 3 of this training.</p>
+</li>
+</ol>
+<h1 id="task-3-add-the-event-handlers-for-the-http-server">Task 3: Add the event handlers for the HTTP Server</h1>
+<div class="bs-callout bs-callout-success "><h4><span class="glyphicon glyphicon-ok-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">More information on HTTP servers
+</span></h4>
+<p>If you are unfamiliar with the topic of HTTP servers, please see the Recommended Reading in the Prerequisites section above.</p>
+</div>
+<ol>
+<li><p>Add the provided <code>httpserver.c</code> and <code>httpserver.h</code> files to your Portable
+project. You can download these files from the project folder in Resource Explorer. Please see Task 1, Step 3 of this training.</p>
+<p> These files contain a shell for the HTTP server functionality. We are going
+ to add to these files to finish the implementation.</p>
+</li>
+<li><p>Open <code>httpserver.c</code> and scroll down to the Callback Functions section (~line 430)</p>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">What are event handlers?
+</span></h4>
+<p> Asynchronous events can be sent by the network processor to the host at any
+ given time with an indication of specific states and
+ specific data for each event. To listen to these events and determine the
+ needed information, a handler
+ must be implemented in the user application and registered under the user.h
+ header file.</p>
+</div>
+</li>
+<li><p>Take a look at the event handlers added for you:</p>
+<ul>
+<li><code>SimpleLinkWlanEventHandler()</code>: Handles all incoming WLAN events by
+updating our control block for use elsewhere in the application. An example
+of a WLAN event is a station (such as your mobile device) connecting to our
+Access Point (CC3220 LaunchPad).</li>
+<li><code>SimpleLinkFatalErrorEventHandler()</code>: Alerts the user to a fatal error
+passed by the network processor.</li>
+<li><code>SimpleLinkNetAppEventHandler()</code>: Handles network events such as IP
+acquired, IP leased, IP released, etc.</li>
+<li><p><code>SimpleLinkNetAppRequestEventHandler()</code>: Handles all NetApp requests. It
+prepares incoming requests and passes them to the message queue we use in
+the HTTP server thread. This callback is required for the functionality of
+the HTTP server.</p>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">No action needed for this task
+</span></h4>
+<p>You can move on to task 4 once you are familair with the event handlers.</p>
+</div>
+</li>
+</ul>
+</li>
+</ol>
+<h1 id="task-4-customize-the-http-server">Task 4: Customize the HTTP Server</h1>
+<h3 id="how-to-write-the-temperature-get-callback-to-display-the-data-from-the-temperature-sensor">How to write the temperature GET callback to display the data from the temperature sensor</h3>
+<ol>
+<li><p>Go to the <code>TODO</code> in <code>tempGetCallback()</code> in <code>httpserver.c</code>. We will have to implement the cases of
+displaying the temperature in Celsius or Fahrenheit.</p>
+</li>
+<li><p>We will be using the enum <code>TempIdx</code> (found in <code>httpserver.h</code>) as our cases. You
+can read from the temperature sensor by using the functions <code>temperatureC</code> and
+<code>temperatureF</code>. An existing example of this is in <code>console.c</code>.</p>
+<div class="panel-group">
+  <div class="panel panel-success">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle collapsed" data-toggle="collapse" href="#expandable_-see-the-temperature-callback-code-"><p> See the temperature callback code</p>
+</a>
+      </h4>
+    </div>
+    <div id="expandable_-see-the-temperature-callback-code-" class="panel-collapse collapse">
+      <div class="panel-body"><div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_1')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_1" class="lang-c hljs cpp"> <span class="hljs-keyword">case</span> TempIdx_C:
+     pthread_mutex_lock(&amp;temperatureMutex);
+     value = (<span class="hljs-keyword">int</span>)temperatureC;
+     pthread_mutex_unlock(&amp;temperatureMutex);
+
+     <span class="hljs-keyword">break</span>;
+
+ <span class="hljs-keyword">case</span> TempIdx_F:
+     pthread_mutex_lock(&amp;temperatureMutex);
+     value = (<span class="hljs-keyword">int</span>)temperatureF;
+     pthread_mutex_unlock(&amp;temperatureMutex);
+
+     <span class="hljs-keyword">break</span>;
+</code></pre><span class="code-title"><p><strong>httpserver.c :: tempGetCallBack()</strong></p>
+</span></div></div>
+</div>
+    </div>
+  </div>
+</div></li>
+</ol>
+<h3 id="how-to-write-the-light-post-callback-to-control-the-on-board-led">How to write the light POST callback to control the on-board LED</h3>
+<ol>
+<li>Go to the <code>TODO</code> in <code>lightPostCallback()</code>. We will have to implement the cases of
+the red LED state.</li>
+<li><p>We will be using the enum <code>LedValues</code> (found in <code>httpserver.h</code>) as our cases.</p>
+<div class="panel-group">
+  <div class="panel panel-success">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle collapsed" data-toggle="collapse" href="#expandable_-see-the-light-callback-code-"><p> See the light callback code</p>
+</a>
+      </h4>
+    </div>
+    <div id="expandable_-see-the-light-callback-code-" class="panel-collapse collapse">
+      <div class="panel-body"><div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_2')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_2" class="lang-c hljs cpp"> <span class="hljs-keyword">case</span> LedValues_Off:
+     ledState = Board_LED_OFF;
+
+     <span class="hljs-keyword">break</span>;
+
+ <span class="hljs-keyword">case</span> LedValues_On:
+     ledState = Board_LED_ON;
+
+     <span class="hljs-keyword">break</span>;
+</code></pre><span class="code-title"><p><strong>httpserver.c :: lightPostCallBack()</strong></p>
+</span></div></div>
+</div>
+    </div>
+  </div>
+</div></li>
+</ol>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Light GET Callback
+</span></h4>
+<p>Additionally, there is also a light GET callback in <code>httpserver.c</code>, which is used
+to check the status of the on-board LED when the webpage is loaded. This makes
+sure the webpage is in sync with the server throughout the demo.</p>
+</div>
+<h3 id="update-the-http-requests">Update the HTTP requests</h3>
+<ol>
+<li><p>We need to update the <code>httpRequest</code> object to recognize the call
+requests from our HTML webpage. Find the <code>TODO</code> in the global variables section of <code>httpserver.c</code> and set up three indexes in the format:</p>
+<p> <code>{i, SL_NETAPP_REQUEST_HTTP_X, "/&lt;call&gt;", {{NULL}}, NULL},</code></p>
+<ul>
+<li>Index 0 will be our <code>HTTP_GET</code> request for "/light"</li>
+<li>Index 1 will be our <code>HTTP_POST</code> request for "/light"</li>
+<li><p>Index 2 will be our <code>HTTP_GET</code> request for "/temp"</p>
+<div class="panel-group">
+  <div class="panel panel-success">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle collapsed" data-toggle="collapse" href="#expandable_-see-the-object-code-"><p> See the object code</p>
+</a>
+      </h4>
+    </div>
+    <div id="expandable_-see-the-object-code-" class="panel-collapse collapse">
+      <div class="panel-body"><div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_3')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_3" class="lang-c hljs cpp">{<span class="hljs-number">0</span>, SL_NETAPP_REQUEST_HTTP_GET, <span class="hljs-string">"/light"</span>, {{NULL}}, NULL},
+{<span class="hljs-number">1</span>, SL_NETAPP_REQUEST_HTTP_POST, <span class="hljs-string">"/light"</span>, {{NULL}}, NULL},
+{<span class="hljs-number">2</span>, SL_NETAPP_REQUEST_HTTP_GET, <span class="hljs-string">"/temp"</span>, {{NULL}}, NULL},
+</code></pre><span class="code-title"><p><strong>httpserver.c :: httpRequest</strong></p>
+</span></div></div>
+</div>
+    </div>
+  </div>
+</div></li>
+</ul>
+</li>
+<li><p>Now we will update the HTTP server database to define the HTTP request
+characteristics and callbacks. Find the <code>TODO</code> in the function <code>initHttpserverDB()</code> of <code>httpserver.c</code>. Our HTTP request characteristic and value formats are:</p>
+<p> <code>httpRequest[i].charValues[i].characteristic = "&lt;characteristic&gt;";</code><br>
+ and<br>
+ <code>httpRequest[i].charValues[i].value[i] = "&lt;value&gt;";</code></p>
+<ul>
+<li>The temp characteristics we are defining are <code>tempc</code> and <code>tempf</code></li>
+<li>The light values we are defining are <code>on</code> and <code>off</code> for the <code>redled</code>
+characteristic</li>
+<li><p>Our HTTP request callback format is <code>httpRequest[i].serviceCallback = &lt;callback&gt;;</code>. We will use our callbacks as implemented earlier: <code>tempGetCallback</code>, <code>lightPostCallback</code>, and <code>lightGetCallback</code></p>
+<div class="panel-group">
+  <div class="panel panel-success">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle collapsed" data-toggle="collapse" href="#expandable_-see-the-database-code-"><p> See the database code</p>
+</a>
+      </h4>
+    </div>
+    <div id="expandable_-see-the-database-code-" class="panel-collapse collapse">
+      <div class="panel-body"><div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_4')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_4" class="lang-c hljs cpp">httpRequest[<span class="hljs-number">0</span>].charValues[<span class="hljs-number">0</span>].characteristic = <span class="hljs-string">"redled"</span>;
+httpRequest[<span class="hljs-number">0</span>].charValues[<span class="hljs-number">0</span>].value[<span class="hljs-number">0</span>] = <span class="hljs-string">"off"</span>;
+httpRequest[<span class="hljs-number">0</span>].charValues[<span class="hljs-number">0</span>].value[<span class="hljs-number">1</span>] = <span class="hljs-string">"on"</span>;
+httpRequest[<span class="hljs-number">0</span>].charValues[<span class="hljs-number">0</span>].value[<span class="hljs-number">2</span>] = <span class="hljs-string">"toggle"</span>;
+httpRequest[<span class="hljs-number">0</span>].serviceCallback = lightGetCallback;
+
+httpRequest[<span class="hljs-number">1</span>].charValues[<span class="hljs-number">0</span>].characteristic = <span class="hljs-string">"redled"</span>;
+httpRequest[<span class="hljs-number">1</span>].charValues[<span class="hljs-number">0</span>].value[<span class="hljs-number">0</span>] = <span class="hljs-string">"off"</span>;
+httpRequest[<span class="hljs-number">1</span>].charValues[<span class="hljs-number">0</span>].value[<span class="hljs-number">1</span>] = <span class="hljs-string">"on"</span>;
+httpRequest[<span class="hljs-number">1</span>].charValues[<span class="hljs-number">0</span>].value[<span class="hljs-number">2</span>] = <span class="hljs-string">"toggle"</span>;
+httpRequest[<span class="hljs-number">1</span>].serviceCallback = lightPostCallback;
+
+httpRequest[<span class="hljs-number">2</span>].charValues[<span class="hljs-number">0</span>].characteristic = <span class="hljs-string">"tempc"</span>;
+httpRequest[<span class="hljs-number">2</span>].charValues[<span class="hljs-number">1</span>].characteristic = <span class="hljs-string">"tempf"</span>;
+httpRequest[<span class="hljs-number">2</span>].serviceCallback = tempGetCallback;
+</code></pre><span class="code-title"><p><strong>httpserver.c :: initHttpserverDB()</strong></p>
+</span></div></div>
+</div>
+    </div>
+  </div>
+</div></li>
+</ul>
+</li>
+</ol>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">HTTP Server debug messages
+</span></h4>
+<p>If you are interested in seeing all of the details of the HTTP server printed to
+your UART terminal, define <code>HTTP_DEBUG_PRINT</code> in line 43 of <code>httpserver.h</code></p>
+</div>
+<h1 id="task-5-start-the-http-server">Task 5: Start the HTTP Server</h1>
+<ol>
+<li><p>Scroll down to the bottom of <code>httpserver.c</code> and take a look at <code>httpserverThread()</code>. This is the
+bulk of the HTTP server thread.</p>
+<ul>
+<li><code>httpserverThread()</code> initializes the CC3220 LaunchPad as an HTTP server and starts the
+device in Access Point mode. <code>ConfigureSimpleLinkToDefaultState()</code> configures
+the device in AP mode and sets the HTTP server.</li>
+<li>This thread also initializes the message queue used by the <code>NetAppRequest</code>
+callback as well as the database we updated earlier.</li>
+<li>The main while loop of this thread receives messages from the queue, and then
+passes the requests to the appropriate HTTP handlers (get, put, post, delete).</li>
+</ul>
+</li>
+<li><p>Go to <code>temperature.c</code>, and <strong>comment out</strong> the <code>GPIO_write</code> calls in the functions <code>sendAlert()</code> and <code>clearAlert()</code>.</p>
+<div class="bs-callout bs-callout-danger "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Stop! Do not skip step 2!
+</span></h4>
+<p> The current implementation of Portable uses the same LED we are controlling in this exercise and causes a conflict. If you do not comment out these lines, your LED may not work as expected.</p>
+</div>
+</li>
+</ol>
+<h1 id="task-6-add-ti-rtos-threads">Task 6: Add TI-RTOS threads</h1>
+<p>Our last software edit is to update the <code>main_tirtos.c</code> for Wi-Fi functionality.
+This includes adding threads for our HTTP server and a SimpleLink Wi-Fi task
+that is required to use the network processor API.</p>
+<ol>
+<li><p>We need to include the SimpleLink and Board header files as well as the UART
+terminal header file at the top of <code>main_tirtos.c</code> in order to use the LaunchPad's terminal output commands.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_5')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_5" class="lang-c hljs cpp"> <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/drivers/net/wifi/simplelink.h&gt;</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;uart_term.h&gt;</span>
+</code></pre><span class="code-title"><p><strong>main_tirtos.c</strong> - Included files</p>
+</span></div></div>
+</li>
+<li><p>Below the includes, we can declare the <code>httpserverThread()</code> the same way the temperature and
+console threads are declared and define the new stack sizes.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_6')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_6" class="lang-c hljs cpp"> <span class="hljs-keyword">extern</span> <span class="hljs-keyword">void</span> *httpserverThread(<span class="hljs-keyword">void</span> *arg0);
+
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> HTTP_STACK_SIZE         (3072)</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> SL_TASK_STACK_SIZE      (2048)</span>
+</code></pre><span class="code-title"><p><strong>main_tirtos.c</strong></p>
+</span></div></div>
+</li>
+<li><p>Within the <code>main()</code> function, we add the definition for <code>spawnThread</code> and its attribute.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_7')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_7" class="lang-c hljs cpp"> pthread_t           spawnThread;
+ pthread_attr_t      attrs_spawn;
+</code></pre><span class="code-title"><p><strong>main_tirtos.c :: main()</strong></p>
+</span></div></div>
+</li>
+<li><p>Below that, initialize the SPI and the UART terminal. This should go after the existing <code>Board_initGeneral();</code></p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_8')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_8" class="lang-c hljs cpp"> SPI_init();
+ InitTerm();
+</code></pre><span class="code-title"><p><strong>main_tirtos.c :: main()</strong></p>
+</span></div></div>
+</li>
+<li><p>Next, we will <strong>comment out</strong> the creation of the <code>consoleThread</code> in <code>main()</code>. This
+thread conflicts with our use of the UART terminal. Remember, we are instead
+using the HTTP Server to host a webpage to provide us with the temperature
+readings.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_9')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_9" class="lang-c hljs cpp"> <span class="hljs-comment">/* Console thread */</span>
+ <span class="hljs-comment">//    retc = pthread_create(&amp;thread, &amp;attrs, consoleThread, NULL);</span>
+ <span class="hljs-comment">//    if (retc != 0) {</span>
+ <span class="hljs-comment">//        /* pthread_create() failed */</span>
+ <span class="hljs-comment">//        while (1);</span>
+ <span class="hljs-comment">//    }</span>
+</code></pre><span class="code-title"><p><strong>main_tirtos.c :: main()</strong></p>
+</span></div></div>
+<div class="bs-callout bs-callout-danger "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Stop! Do not skip step 5!
+</span></h4>
+<p> The console thread attempts to open a conflicting UART terminal which may
+ cause the example to hang while trying to run the console.</p>
+</div>
+</li>
+<li><p>The first thread that we will create is the SimpleLink Wi-Fi thread. This is
+important because we need <code>sl_Task()</code> to begin running first in order to handle any
+of asynchronous events raised by the network processor as a result of NWP API
+calls. We will set this task as priority 9 so it is always the highest priority thread will run before any other threads. This goes in the <code>main()</code> function and can be placed <strong>below</strong> the creation of the temperature mutex.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_10')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_10" class="lang-c hljs cpp"> <span class="hljs-comment">/* create the sl_Task */</span>
+ pthread_attr_init(&amp;attrs_spawn);
+ priParam.sched_priority = <span class="hljs-number">9</span>;
+ retc = pthread_attr_setschedparam(&amp;attrs_spawn, &amp;priParam);
+ retc |= pthread_attr_setstacksize(&amp;attrs_spawn, SL_TASK_STACK_SIZE);
+
+ retc = pthread_create(&amp;spawnThread, &amp;attrs_spawn, sl_Task, NULL);
+ <span class="hljs-keyword">if</span>(retc)
+ {
+     <span class="hljs-comment">/* Handle Error */</span>
+     UART_PRINT(<span class="hljs-string">"Unable to create sl_Task thread \n"</span>);
+     <span class="hljs-keyword">while</span>(<span class="hljs-number">1</span>);
+ }
+</code></pre><span class="code-title"><p><strong>main_tirtos.c :: main()</strong></p>
+</span></div></div>
+</li>
+<li><p>Finally, add the HTTP server thread <strong>below</strong> the <code>sl_Task</code> thread in the <code>main()</code>
+function. We will set this thread as priority 3 so it is slightly higher
+priority than the temperature thread.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_11')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_11" class="lang-c hljs cpp"> <span class="hljs-comment">/* HTTP Server thread */</span>
+ priParam.sched_priority = <span class="hljs-number">3</span>;
+ pthread_attr_setschedparam(&amp;attrs, &amp;priParam);
+ retc |= pthread_attr_setstacksize(&amp;attrs, HTTP_STACK_SIZE);
+
+ retc = pthread_create(&amp;thread, &amp;attrs, httpserverThread, NULL);
+ <span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+     <span class="hljs-comment">/* pthread_create() failed */</span>
+     <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+ }
+</code></pre><span class="code-title"><p><strong>main_tirtos.c :: main()</strong></p>
+</span></div></div>
+<p> <strong>Important:</strong> This snippet of code must be <strong>after</strong> the <code>pthread_attr_setschedparam(&amp;attrs, &amp;priParam);</code> earlier on in <code>main()</code> since we are using <code>attrs</code> and <code>priParam</code> here.</p>
+</li>
+<li><p>Rebuild the project!</p>
+</li>
+</ol>
+<h1 id="task-7-program-the-device">Task 7: Program the device</h1>
+<ol>
+<li><p>Download the provided UniFlash zip package <code>Portable_Wifi.zip</code> from the Resource Explorer project folder, which includes a demo HTML page titled <code>portable.html</code> (see task 1, step 3). User files are stored on the serial flash. The HTML page will be hosted by the NWP when the HTTP server is started.</p>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Using UniFlash ImageCreator
+</span></h4>
+<p> For additional information on any of the following UniFlash ImageCreator steps, please see the <a href="http://www.ti.com/lit/swru461">SimpleLink Wi-Fi CC3220 Getting Started Guide</a>!</p>
+</div>
+</li>
+<li><p>Start UniFlash, select the <strong>CC3120/CC3220</strong> device as shown, and select <strong>Start ImageCreator</strong>.</p>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/portable_choosedevice.png" alt="Choose Your Device" class="img-responsive"></div><p></p>
+</li>
+<li><p>Select <strong>Manage Projects</strong>. Click the <strong>Import Project from ZIP file</strong> button, and browse for the <code>Portable_Wifi.zip</code> you downloaded earlier. Be sure <code>Portable_Wifi</code> is highlighted in the Available Projects list, and click <strong>Open Selected Project</strong>.</p>
+</li>
+<li><p>Select <strong>User Files</strong> in the left-hand menu as shown. You should see the following user files, including <code>portable.html</code>.</p>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/portable_userfiles.png" alt="User Files" class="img-responsive"></div><p></p>
+</li>
+<li><p>In the Actions menu, <strong>Select MCU Image</strong>, then click <strong>Browse</strong>.</p>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/portable_selectmcuimage.png" alt="Select MCU Image" class="img-responsive"></div><p></p>
+</li>
+<li><p>Browse to the <code>.bin</code> we built earlier and <strong>open</strong>. This will be in your CCS workspace in the project's Debug folder. If you have not made any changes to the default project name, this will be <code>/ti/workspace_v7/portable_CC3220SF_LAUNCHXL_tirtos_ccs/Debug/portable_CC3220SF_LAUNCHXL_tirtos_ccs.bin</code>. You will see the following screen:</p>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/portable_mcuflashimg.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>Next, we will need add the Private Key File that signs the MCU Image. We saw in the User Files that we have the <code>dummy-root-ca-cert</code> already loaded in this ImageCreator project. The key for this Root CA is provided in the certificate playground in the SimpleLink CC3220 SDK. Browse to <code>/ti/simplelink_cc32xx_sdk_x_xx_xx_xx/tools/cc32xx_tools/certificate_playground/dummy-root-ca-cert-key</code> and <strong>open</strong>.</p>
+</li>
+<li><p>Below, select the <code>dummy-root-ca-cert</code> as the Certification File Name. Once your completed screen looks like the one below, press <strong>Write</strong>.</p>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/portable_completedbin.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>You can see the <code>mcuflashimg.bin</code> was added! Now, select <strong>Generate Image</strong> on the right-hand menu.</p>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/portable_generateimage.png" alt="Generate Image" class="img-responsive"></div><p></p>
+</li>
+<li><p>Select <strong>Connect</strong> to initiate the connection with your LaunchPad (anything holding the device COM port, such as a terminal window, will need to be closed). Then, select <strong>Program Image</strong>.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/portable_program.png" alt="Program Image" class="img-responsive"></div><p></p>
+</li>
+</ol>
+<h1 id="task-8-test-the-demo-">Task 8: Test the demo!</h1>
+<ol>
+<li><p>Open up a terminal on your device's COM port and reset the LaunchPad. We want to use the XSD110 Class Application/User UART port with the following parameters:</p>
+<div class="alert alert-warning "><p> <strong>UART Configuration</strong><br>
+ Baud rate: 115200<br>
+ Data: 8 bit<br>
+ Parity: None<br>
+ Stop: 1 bit<br>
+ Flow control: None</p>
+</div>
+</li>
+<li><p>Connect to the AP broadcasted by your device. The name of this AP will be
+<strong>simplelink-</strong> followed by the last 6 digits of your MAC address.</p>
+</li>
+<li><p>Open up a browser and type in the URL <code>mysimplelink.net/portable.html</code> to test the demo.</p>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/demo_html.png" alt="Demo page" class="img-responsive"></div><p></p>
+</li>
+</ol>
+<div class="bs-callout bs-callout-success "><h4><span class="glyphicon glyphicon-ok-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Find your MAC address
+</span></h4>
+<p>Each SimpleLink Wi-Fi device has its own unique MAC address. You can see this in UniFlash ImageCreator when you are connected to the device.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/portable_macaddress.png" alt="Find your MAC address" class="img-responsive"></div><p></p>
+</div>
+<p><br><br></p>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Technical support
+</span></h4>
+<p>For any questions, please search on the
+<a href="https://e2e.ti.com/support/wireless_connectivity/simplelink_wifi_cc31xx_cc32xx/">TI SimpleLink Wi-Fi E2E Forum</a></p>
+</div>
+<div align="center" style="margin-top: 4em; font-size: smaller;">
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="../../web_support/cc_license_icon.png"></a><br>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.</div>
+
+</div><div class="col-xs-4 col-sm-2 sidebar-offcanvas bs-docs-sidebar hidden-print" id="sidebar-overview"><ul class="nav nav-stacked fixed" id="sidebar"><li><a href="#introduction">Introduction</a></li><li><a href="#prerequisites">Prerequisites</a><ul class="nav nav-stacked"><li><a href="#recommended-reading">Recommended Reading</a></li><li><a href="#software">Software</a></li><li><a href="#hardware">Hardware</a></li></ul></li><li><a href="#task-1-import-the-portable-example">Task 1: Import the Portable example</a></li><li><a href="#task-2-set-up-the-portable-example-for-wi-fi">Task 2: Set up the Portable example for Wi-Fi</a></li><li><a href="#task-3-add-the-event-handlers-for-the-http-server">Task 3: Add the event handlers for the HTTP Server</a></li><li><a href="#task-4-customize-the-http-server">Task 4: Customize the HTTP Server</a><ul class="nav nav-stacked"><ul class="nav nav-stacked"><li><a href="#how-to-write-the-temperature-get-callback-to-display-the-data-from-the-temperature-sensor">How to write the temperature GET callback to display the data from the temperature sensor</a></li><li><a href="#how-to-write-the-light-post-callback-to-control-the-on-board-led">How to write the light POST callback to control the on-board LED</a></li><li><a href="#update-the-http-requests">Update the HTTP requests</a></li></ul></ul></li><li><a href="#task-5-start-the-http-server">Task 5: Start the HTTP Server</a></li><li><a href="#task-6-add-ti-rtos-threads">Task 6: Add TI-RTOS threads</a></li><li><a href="#task-7-program-the-device">Task 7: Program the device</a></li><li><a href="#task-8-test-the-demo-">Task 8: Test the demo!</a></li></ul></div></div></div></div>
+
+<link rel="stylesheet" href="../../web_support/highlight/styles/zenburn.css">
+<script src="../../web_support/strapdown/vendor/jquery-1.11.2.min.js"></script>
+<script src="../../web_support/strapdown/vendor/bootstrap.min.js"></script>
+<script src="../../web_support/highlight/highlight.pack.js"></script>
+<script type="text/javascript">document.isPreRendered = true;</script><script src="../../web_support/strapdown/v/0.2/strapdown.js"></script>      <div class="modal" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">        <div class="vertical-alignment-helper">          <div class="modal-dialog vertical-align-center">             <div class="modal-dialog">               <div class="modal-content" style="margin-left: auto;margin-right: auto;">                 <div class="modal-body">                   <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>                   <img src="" class="imagepreview img-responsive">                 </div>              </div>            </div>          </div>        </div>      </div>
+
+
+</body></html>

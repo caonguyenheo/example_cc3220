@@ -1,0 +1,1730 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>Wi-Fi Secure File System</title>
+<link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/ubuntu-regular-woff.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/glyphicons-halflings-regular.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/united2.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/bootstrap-responsive.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/strapdown.css"><link rel="shortcut icon" type="image/x-icon" href="../../.metadata/favicon.ico"></head>
+
+<!-- START PRE -->
+
+
+
+
+
+
+<!-- END PRE -->
+
+<body style=""><div class="container"><nav class="navbar navbar-default navbar-static-top"><div class="container-fluid"> <div class="navbar-header">  <div id="headline" class="navbar-brand">Wi-Fi Secure File System</div> </div> </div></nav><div class="container"><div class="row row-offcanvas row-offcanvas-left"><div class="col-xs-12 col-sm-9" id="content"><h1 id="introduction">Introduction</h1>
+<p>IoT devices are becoming more common in data sensitive applications such as medical monitoring. Such devices are exposed to the following types of attack vectors: internet, LAN, and physical access.
+The SimpleLink™ Wi-Fi® CC3x20 device family offers security features which mitigate vulnerability from these attack vectors.
+These security features include: secure file system, secure socket, secure http server, secure content delivery, and secure manufacturing.</p>
+<h2 id="vulnerabilities-of-iot-devices">Vulnerabilities of IoT Devices</h2>
+<p>IoT devices are typically connected to the internet and often provide access to personal/sensitive information. Some common attack vectors include:</p>
+<ul>
+<li><strong>Internet Network Connectivity Vector</strong>: The vulnerabilities in this vector could come from all communication channels (ex. sockets) and protocols in use. In general, these attacks target all the resources and information that pass through these communication channels.</li>
+<li><strong>Local Network Connectivity Vector</strong>: This attack vector is similar to the internet network connectivity vector but with a much narrower geographical scope. The attackers could attempt to breach security with attacks that are based on monitoring the traffic of the wireless network.  Monitoring a wireless network is fairly easy, and even in secured wireless networks some of the frame headers are not encrypted.</li>
+<li><strong>Physical Access (Operation)</strong>: The operation vector refers to attacks that enable the hacker to control the operation of the device by using the interfaces that the final product offers (ex. power line, buttons, etc.).</li>
+<li><strong>Physical Access (PCB Manipulation)</strong>: The manipulation vector relates to the ability of the hacker to have access to the actual board allowing an individual to monitor the lines and interfaces or even manipulate wires.</li>
+</ul>
+<h2 id="simplelink-security-features">SimpleLink Security Features</h2>
+<p>In addition to the secure sockets, SimpleLink Wi-Fi includes the following security features:</p>
+<ul>
+<li><strong>Secure Networking</strong>: Ensures the authenticity, reliability, and confidentiality of data flow between peers over the network</li>
+<li><strong>Wi-Fi Security</strong>: The Wi-Fi layer of the device supports security to ensure the integrity and confidentiality of L2 transaction frames between AP and station, or between two peers in Wi-Fi Direct mode</li>
+<li><strong>Secure File System</strong>: File system security for confidentiality and integrity of data (including: authentication and integratity verification, content encryption, cloning protection, failsafe update mechanism, factory image recovery)</li>
+<li><strong>Secure Content Delivery</strong>: This capability enables the exchange of confidential content to the device and provides another level of security at the application-layer</li>
+<li><strong>Crypto Utilities</strong>: The SimpleLink device exposes a set of crypto primitives to aid in some common cryptographic related operations</li>
+<li><strong>Hardware Crypto Engine</strong>: The CC3220 microcontroller includes a set of hardware crypto engines such as CRC, AES, DES and SHA/MD5, known as DTHE (Data Transformation and Hash Engine), to enhance the performance of applications that require custom application level security</li>
+</ul>
+<h1 id="prerequisites">Prerequisites</h1>
+<h2 id="software">Software</h2>
+<ul>
+<li><a href="http://www.ti.com/tool/ccstudio">Code Composer Studio</a> v7.4 or later<ul>
+<li>Must have SimpleLink CC3xxx Wireless support</li>
+<li>Make sure that CCS is using the latest updates: <strong>Help → Check for Updates</strong></li>
+</ul>
+</li>
+<li><a href="http://www.ti.com/tool/simplelink-cc3220-sdk">CC3220 SDK v1.60.00.04</a> or later</li>
+<li><a href="http://www.ti.com/tool/UNIFLASH">UniFlash</a> v4.2.1.15 or later.</li>
+<li>Terminal emulator program such as TeraTerm or PuTTY</li>
+</ul>
+<h2 id="hardware">Hardware</h2>
+<ul>
+<li>CC3220S or CC3220SF LaunchPad (<a href="http://www.ti.com/tool/cc3220s-launchxl">CC3220S-LAUNCHXL</a> or <a href="http://www.ti.com/tool/cc3220sf-launchxl">CC3220SF-LAUNCHXL</a>)</li>
+<li>1x Micro-USB cable (included with LaunchPad)</li>
+<li>802.11b/g/n (2.4-GHz) Wireless Access Point (AP)</li>
+</ul>
+<h1 id="file-system-overview">File System Overview</h1>
+<p>The second generation of SimpleLink Wi-Fi devices uses an externally attached NVM (non-volatile memory) in the form of an SFLASH (serial flash device) to store a range of sensitive information such as passkeys, device configurations, and TI/customer intellectual property. The SimpleLink solution utilizes a file system to organize data on the SFLASH which is accessible using a simple host interface.</p>
+<p>The file system provides security for the user and system files while also securing the data structures of the file system itself. The following security functionalities are related to the CC3120, CC3220S, and CC3220SF devices:
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/secure_fs_features.png" alt="" class="img-responsive"></div><p></p>
+<h2 id="file-system-funcionality">File System Funcionality</h2>
+<h3 id="encryption">Encryption</h3>
+<ul>
+<li>Files can be kept encrypted on the serial flash using the AES128-CTR encryption cryptographic standard. Decryption is done automatically when reading the file.</li>
+<li>Keys are generated by the device using a true random number generator hardware engine.</li>
+<li>Some of the system files are also encrypted including the files that contain sensitive information such as keys.</li>
+</ul>
+<h3 id="cloning-protection">Cloning Protection</h3>
+<ul>
+<li>Secure files can be read only by the device that created them.</li>
+<li>The device enters into a lock state if the content of the serial flash has been copied to another device, or the serial flash has been assembled into a different device from the one that programmed it.</li>
+</ul>
+<h3 id="integrity-verification">Integrity Verification</h3>
+<ul>
+<li>As part of an integrity test, the device generates an encrypted string of the file content every time it is changed by the file system. The result is kept as the file signature. Once the file is opened for read, the file content is tested against this signature. If the device detects that the content of a file was changed by unauthorized user, it triggers a system alert.</li>
+<li>System files and the file system structure are also protected and their integrity is tested by the device. The integrity validation of system files is done by using the HMAC-SHA2 (256) algorithm.  If the device detects content change by an unauthorized user in a system file or in a file system structure, it enters a lock state.</li>
+<li>The SimpleLink device ensures system integrity during programming and downloading updates by providing:<ul>
+<li><strong>Image Programming</strong>: A procedure that uses a single image file to ensure the device is not partially configured</li>
+<li><strong>Files Bundle</strong>: Used during Over-The-Air programming to allow the user to modify files and approve new content as one operation or rollback to former content</li>
+</ul>
+</li>
+</ul>
+<h3 id="access-control">Access Control</h3>
+<ul>
+<li>Each secure file has several access levels uses to restrict access to the file operation such as delete, read, or write. Tokens are used to control the access to the secure files.</li>
+<li>When a secure file is created, four different tokens (32-bit numbers) are generated. Each token provides a different access level to the file.</li>
+</ul>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Token Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Master Token</td>
+<td>Enables full access to the file. A secure file can be deleted only with the master token. The master token is unchanged as long as the file exists</td>
+</tr>
+<tr>
+<td>Read/Write Token</td>
+<td>Enables read and write access. This token is generated automatically when the file has been changed</td>
+</tr>
+<tr>
+<td>Write Only Token</td>
+<td>Enable write access only. This access level is can be used to protect private keys. This token is generated automatically when the file has changed</td>
+</tr>
+<tr>
+<td>Read Only Token</td>
+<td>Enables read access only. This token is generated automatically when the file has changed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="origin-authenticity">Origin Authenticity</h3>
+<ul>
+<li>The authentication method used for this process is a well-known methodology—PKCS#1 SHA-1 with RSA encryption (the key size is 128 or 256); creating a file signature verifies both the file integrity and the authentication of the file</li>
+<li>To create a digital signature for the authentication process, the vendor must have an RSA key-pair. The certificate that holds the public key must be signed by a certificate authority</li>
+<li>The entire chain of trust for this certificate is verified by the device using the certificate store</li>
+<li>Writing the service-pack and the certificate store files requires a signature; the signatures for those files are supplied by TI. For any other secure signed files, no certificate is required</li>
+</ul>
+<h3 id="recovery-mechanism">Recovery Mechanism</h3>
+<ul>
+<li>The SimpleLink device has embedded an internal recovery mechanism that allows the file system to be rolled back to a pre-defined image programmed in the production line</li>
+<li>The recovery image is a system file kept on the serial flash. The file is protected and secure. The recovery image file can be viewed by the file list but cannot be accessed from the host</li>
+<li>The process of restore to factory is fail-safe, as it resumes even if there was a power failure during the operation</li>
+</ul>
+<h3 id="system-alerts">System Alerts</h3>
+<ul>
+<li>The SimpleLink device provides a data tampering procedure with a security alert counter</li>
+<li>This procedure detects any integrity violations of the file system data, content of secure-authenticate files, and system files. It also detects unauthorized operations, such as trying to read a secure file with an invalid token</li>
+<li>When the system reaches the security alerts threshold, the device is locked. In addition, the host receives an asynchronous event regarding the lock</li>
+<li>The counter-alert lock mechanism protects against brute-force attacks</li>
+</ul>
+<h2 id="levels-of-file-protection">Levels of File Protection</h2>
+<p>The file system is the major building block for most of the device’s security and stores the device’s sensitive information (IP, system configuration, user-files, etc.).  The file system maintains the integrity and authenticity of this data, and files on the external storage can be classified as follows:</p>
+<ul>
+<li><strong>Non-secure Files</strong>:<ul>
+<li>Unrestricted read and write access to this plain text file type</li>
+<li>No validation is performed</li>
+</ul>
+</li>
+<li><strong>Secure Files</strong>:<ul>
+<li>File content is stored as AES128 encrypted text and the encryption key is changed on every write</li>
+<li>Access control where the file can only be accessed with a valid token</li>
+<li>Cloning protection since a file cannot be copied to other devices</li>
+</ul>
+</li>
+<li><strong>Secure-n-authenticated Files</strong>:<ul>
+<li>Contains all security properties of secure files</li>
+<li>The authenticity of the writer of the secure-n-authenticated file is validated on every write cycle</li>
+<li>The authenticity uses digital signature of the file content, the file is signed using an RSA private key, and supports X.509 certificate chain</li>
+<li>On every open for read operation the file content is verified, by calculating the file SHA and comparing it to a signature which was created and kept during the write-cycle</li>
+<li>The device maintains a root certificate on ROM, and the chain-of-trust must be rooted to the device’s ROM either:<ul>
+<li>By using a chain with TI’s ROM certificate</li>
+<li>Or, by using a chain whose root certificate is part of the device’s "Certificate Store" file. The "Certificate Store" file is stored on the file system and is signed by the ROM certificate</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="secure-file-system-api">Secure File System API</h2>
+<p>The 4 primary API calls for read, write, open, and close used in the secure file system demos are explored below:</p>
+<ul>
+<li><p><strong>sl_FsOpen</strong>:
+  <br><code>_i32 sl_FsOpen(const _u8 *pFileName,const _u32 AccessModeAndMaxSize,_u32 *pToken);</code></p>
+<ul>
+<li>Function Parameters:<ul>
+<li><code>pFileName</code>: File name ,pointer to a null-terminated string contains file name</li>
+<li><code>pToken</code>: Uses as input token in case of open-read and in case of open-write with vendor flag, otherwise it is output token                                                                </li>
+<li><code>AccessModeAndMaxSize</code>:<ul>
+<li><code>SL_FS_READ</code>: Read a file</li>
+<li><code>SL_FS_WRITE</code>: Open for write for an existing file</li>
+<li><code>SL_FS_OVERWRITE</code>: In case the file do exists open it for write else create the file and open for write</li>
+<li><code>SL_FS_CREATE</code>: Create a new file and open for write</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Return Value:<ul>
+<li>On success, file handle is returned. On error, negative error code is returned</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>sl_FsRead</strong>: 
+  <br><code>_i32 sl_FsRead(const _i32 FileHdl,_u32 Offset ,_u8*  pData,_u32 Len);</code></p>
+<ul>
+<li>Function Parameters:<ul>
+<li><code>FileHdl</code>: Handle to the file (assigned from <code>sl_FsOpen()</code>)</li>
+<li><code>Offset</code>: Offset to specific location to be read/write</li>
+<li><code>pData</code>: Pointer the receive/transmit data to the storage device</li>
+<li><code>Len</code>: Length to read/write</li>
+</ul>
+</li>
+<li>Return Value:<ul>
+<li>On success, returns the number of read bytes. On error, negative number is returned</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>sl_FsWrite</strong>:
+  <br><code>_i32 sl_FsWrite(const _i32 FileHdl,_u32 Offset,_u8*  pData,_u32 Len);</code></p>
+<ul>
+<li>Function Parameters:<ul>
+<li><code>FileHdl</code>: Handle to the file (assigned from <code>sl_FsOpen()</code>)</li>
+<li><code>Offset</code>:    Offset to specific location to be read/write</li>
+<li><code>pData</code>: Pointer the receive/transmit data to the storage device</li>
+<li><code>Len</code>: Length to read/write</li>
+</ul>
+</li>
+<li>Return Value:<ul>
+<li>On success, returns the number of written bytes.  On error, negative error code is returned</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>sl_FsClose</strong>: 
+  <br><code>_i32 sl_FsClose(const _i32 FileHdl,const _u8* pCeritificateFileName,const _u8* pSignature,const _u32 SignatureLen);</code></p>
+<ul>
+<li>Function Parameters:<ul>
+<li><code>FileHdl</code>: Handle to the file (assigned from sl_FsOpen)</li>
+<li><code>pCeritificateFileName</code>: Certificate file, or NULL if irrelevant</li>
+<li><code>pSignature</code>: The signature is SHA-1, the certificate chain may include SHA-256</li>
+<li><code>SignatureLen</code>: The actual signature length</li>
+</ul>
+</li>
+<li>Return Value:<ul>
+<li>Zero on success, or a negative value if an error occurred</li>
+</ul>
+</li>
+<li>Notes:<ul>
+<li>Close file in storage device (authentication is performed if needed)</li>
+<li>In case the file was opened as not secure file or as secure-not signed, any certificate or signature provided are ignored, those fields should be set to NULL  </li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="task-1-preparing-the-environment">Task 1: Preparing the Environment</h1>
+<p>The following section will discuss the steps needed to experience the file system on the CC3220 LaunchPad. This example is based on the Portable example found within the CC3220 SDK. We will enable Wi-Fi using the SimpleLink Wi-Fi APIs and the file system capabilities on top of the existing example.</p>
+<h2 id="modifying-the-portable-example">Modifying the Portable Example</h2>
+<ol>
+<li>In CCS, open the TI Resource Explorer (<strong>View → Resource Explorer</strong>)</li>
+<li><p>Expand the folders as shown to select the Portable example, then click the <strong>Import to IDE</strong> icon at the top-right</p>
+<ul>
+<li>Be sure you select your desired project "flavor" (CC3220S-LAUNCHXL, CC3220SF-LAUNCHXL, TI-RTOS, Free-RTOS, CCS, GCC, etc)</li>
+<li><p>We will be using the TI-RTOS CCS example for this lab: <code>portable_CC3220SF_LAUNCHXL_tirtos_ccs</code></p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="../wifi_portable/resources/portable_tirex.png" alt="TI Resource Explorer" class="img-responsive"></div><br><p></p>
+</li>
+</ul>
+</li>
+<li><p>We will be using the Portable example as a base project, but we will remove the original temperature and console threads and replace them with a file-system implementation. We first have to edit the <code>main_tirtos.c</code> file. Select the code below and use to replace the entire existing <code>main_tirtos.c</code> code.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_1')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_1" class="lang-c hljs cpp"> <span class="hljs-comment">/*
+  * Copyright (c) 2016, Texas Instruments Incorporated
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+  *
+  * *  Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  *
+  * *  Redistributions in binary form must reproduce the above copyright
+  *    notice, this list of conditions and the following disclaimer in the
+  *    documentation and/or other materials provided with the distribution.
+  *
+  * *  Neither the name of Texas Instruments Incorporated nor the names of
+  *    its contributors may be used to endorse or promote products derived
+  *    from this software without specific prior written permission.
+  *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+  * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+  * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+  * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+  * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+  * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+
+  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */</span>
+
+ <span class="hljs-comment">/*
+  *  ======== main_tirtos.c ========
+  */</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdint.h&gt;</span>
+
+ <span class="hljs-comment">/* POSIX Header files */</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;pthread.h&gt;</span>
+
+ <span class="hljs-comment">/* RTOS header files */</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/sysbios/BIOS.h&gt;</span>
+
+ <span class="hljs-comment">/* Driver header files */</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/drivers/GPIO.h&gt;</span>
+
+ <span class="hljs-comment">/* Example/Board Header files */</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> "Board.h"</span>
+
+ <span class="hljs-keyword">extern</span> <span class="hljs-keyword">void</span> *secureFSExampleThread(<span class="hljs-keyword">void</span> *arg0);
+
+ <span class="hljs-comment">/* Stack size in bytes */</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> THREADSTACKSIZE    2048</span>
+
+ <span class="hljs-comment">/*
+  *  ======== main ========
+  */</span>
+ <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-keyword">void</span>)</span>
+ </span>{
+     pthread_t           thread;
+     pthread_attr_t      pAttrs;
+     <span class="hljs-keyword">struct</span> sched_param  priParam;
+     <span class="hljs-keyword">int</span>                 retc;
+     <span class="hljs-keyword">int</span>                 detachState;
+
+     <span class="hljs-comment">/* Call driver init functions */</span>
+     Board_initGeneral();
+
+     <span class="hljs-comment">/* Set priority and stack size attributes */</span>
+     pthread_attr_init(&amp;pAttrs);
+     priParam.sched_priority = <span class="hljs-number">1</span>;
+
+     detachState = PTHREAD_CREATE_DETACHED;
+     retc = pthread_attr_setdetachstate(&amp;pAttrs, detachState);
+     <span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+         <span class="hljs-comment">/* pthread_attr_setdetachstate() failed */</span>
+         <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+     }
+
+     pthread_attr_setschedparam(&amp;pAttrs, &amp;priParam);
+
+     retc |= pthread_attr_setstacksize(&amp;pAttrs, THREADSTACKSIZE);
+     <span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+         <span class="hljs-comment">/* pthread_attr_setstacksize() failed */</span>
+         <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+     }
+
+     retc = pthread_create(&amp;thread, &amp;pAttrs, secureFSExampleThread, NULL);
+     <span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+         <span class="hljs-comment">/* pthread_create() failed */</span>
+         <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+     }
+
+     <span class="hljs-comment">/* Start the TI-RTOS scheduler */</span>
+     BIOS_start();
+
+     <span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);
+ }
+</code></pre><span class="code-title"><p><strong>main_tirtos.c</strong></p>
+</span></div></div>
+</li>
+<li><p>You may exclude the <code>temperature.c</code> and <code>console.c</code> from the projet compilation.</p>
+</li>
+<li><p>Since we are going to use the terminal in this example, we will add the common UART services. From another Wi-Fi application, copy <code>uart_term.c</code> and <code>uart_term.h</code> and add the files into your project. You can find these files in the Network Terminal example: <code>simplelink_cc32xx_sdk_x_xx_xx_xx/examples/rtos/CC3220SF_LAUNCHXL/demos/network_terminal/</code>. This will enable us to initialize the UART to a standard configuration (baudrate of 115200) and use a formatted output (<code>Report()</code>).</p>
+</li>
+<li><p>Create a new file titled <code>secure_fs.c</code> in your project with the following code. This will implement the new file-system example thread.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_2')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_2" class="lang-c hljs cpp"> <span class="hljs-comment">/*
+  *   Copyright (C) 2016 Texas Instruments Incorporated
+  *
+  *   All rights reserved. Property of Texas Instruments Incorporated.
+  *   Restricted rights to use, duplicate or disclose this code are
+  *   granted through contract.
+  *
+  *   The program may not be used without the written permission of
+  *   Texas Instruments Incorporated or against the terms and conditions
+  *   stipulated in the agreement under which this program has been supplied,
+  *   and under no circumstances can it be used with non-TI connectivity device.
+  *
+  */</span>
+
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdint.h&gt;</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stddef.h&gt;</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;unistd.h&gt;</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdarg.h&gt;</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdlib.h&gt;</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdio.h&gt;</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;string.h&gt;</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/drivers/net/wifi/simplelink.h&gt;</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;pthread.h&gt;</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> "Board.h"</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> "uart_term.h"</span>
+
+ <span class="hljs-comment">/* Put callbacks and helper functions here*/</span>
+
+ <span class="hljs-comment">/* This is the example thread */</span>
+ <span class="hljs-keyword">void</span> *secureFSExampleThread(<span class="hljs-keyword">void</span> *arg0)
+ {
+     <span class="hljs-comment">/* Put wifi_init and sl_Start here */</span>
+
+     <span class="hljs-comment">/* Put Task 3 code here */</span>
+
+     <span class="hljs-comment">/* This is the empty while loop. This should always be at the end of the function. */</span>
+     <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+ }
+</code></pre><span class="code-title"><p><strong>secure_fs.c</strong></p>
+</span></div></div>
+</li>
+<li><p>The modified project can be built (although it will do nothing if run at this stage). The modified project content is shown below:</p>
+</li>
+</ol>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/project.png" alt="" class="img-responsive"></div><p></p>
+<h2 id="enabling-simplelink-wi-fi">Enabling SimpleLink Wi-Fi</h2>
+<p>In order to use the flash file system, we first need to enable the network processor.</p>
+<ol>
+<li><p>Add the SimpleLink library (<code>simplelink.a</code>) to the project.</p>
+<ul>
+<li>Right-click on the Portable project name and select <strong>Properties -&gt; Build -&gt; ARM Linker -&gt; File Search Path</strong></li>
+<li><p>Click the document icon with the green plus next to "Include library file..."</p>
+<p>  </p><div class="modal-pop" style="cursor:zoom-in;"><img src="../wifi_portable/resources/portable_include.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li>Browse to your SimpleLink CC3220 SDK installation, then <code>source/ti/drivers/net/wifi/ccs/rtos/</code> and select <code>simplelink.a</code>. Select <strong>OK</strong>.</li>
+</ul>
+</li>
+<li><p>The library requires that all the SimpleLink driver callbacks must be implemented (although they are not all used by this example). Add the following code to <code>secure_fs.c</code>:</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_3')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_3" class="lang-c hljs cpp"> <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkWlanEventHandler</span><span class="hljs-params">(SlWlanEvent_t *pWlanEvent)</span>
+ </span>{
+     UART_PRINT(<span class="hljs-string">"pWlanEvent-&gt;Id=%d\n\r"</span>, pWlanEvent-&gt;Id);
+ }
+
+ <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkFatalErrorEventHandler</span><span class="hljs-params">(SlDeviceFatal_t *slFatalErrorEvent)</span>
+ </span>{
+     UART_PRINT(<span class="hljs-string">"slFatalErrorEvent-&gt;Id=%d\n\r"</span>, slFatalErrorEvent-&gt;Id);
+ }
+
+ <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkGeneralEventHandler</span><span class="hljs-params">(SlDeviceEvent_t *pDevEvent)</span>
+ </span>{
+      UART_PRINT(<span class="hljs-string">"pDevEvent-&gt;Id=%d\n\r"</span>, pDevEvent-&gt;Id);
+ }
+
+ <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkNetAppEventHandler</span><span class="hljs-params">(SlNetAppEvent_t *pNetAppEvent)</span>
+ </span>{
+     <span class="hljs-comment">/* Unused in this application */</span>
+ }
+
+ <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkSockEventHandler</span><span class="hljs-params">(SlSockEvent_t *pSock)</span>
+ </span>{
+     <span class="hljs-comment">/* Unused in this application */</span>
+ }
+
+ <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkHttpServerEventHandler</span><span class="hljs-params">(SlNetAppHttpServerEvent_t *pHttpEvent,
+                                       SlNetAppHttpServerResponse_t *pHttpResponse)</span>
+ </span>{
+     <span class="hljs-comment">/* Unused in this application */</span>
+ }
+
+ <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkNetAppRequestMemFreeEventHandler</span> <span class="hljs-params">(<span class="hljs-keyword">uint8_t</span> *buffer)</span>
+ </span>{
+     <span class="hljs-comment">/* Unused in this application */</span>
+ }
+
+ <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkNetAppRequestEventHandler</span> <span class="hljs-params">(SlNetAppRequest_t *pNetAppRequest, 
+                                             SlNetAppResponse_t *pNetAppResponse)</span>
+ </span>{
+     <span class="hljs-comment">/* Unused in this application */</span>
+ }
+</code></pre><span class="code-title"><p><strong>secure_fs.c</strong></p>
+</span></div></div>
+</li>
+<li><p>The following code is used to enable the SPI interface and trigger the Wi-Fi driver thread. Copy and paste this code into <code>secure_fs.c</code> above the thread function:</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_4')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_4" class="lang-c hljs cpp"> <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> SPAWN_TASK_PRIORITY     (9)</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> TASK_STACK_SIZE         (2048)</span>
+
+ <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">wifi_init</span><span class="hljs-params">()</span>
+ </span>{
+     <span class="hljs-keyword">int</span> RetVal;
+     pthread_attr_t      pAttrs_spawn;
+     pthread_t g_spawn_thread = (pthread_t)NULL;
+     <span class="hljs-keyword">struct</span> sched_param  priParam;
+
+     Board_initGPIO();
+     SPI_init();
+
+     <span class="hljs-comment">//create the sl_Task</span>
+     pthread_attr_init(&amp;pAttrs_spawn);
+     priParam.sched_priority = SPAWN_TASK_PRIORITY;
+     RetVal = pthread_attr_setschedparam(&amp;pAttrs_spawn, &amp;priParam);
+     RetVal |= pthread_attr_setstacksize(&amp;pAttrs_spawn, TASK_STACK_SIZE);
+
+     <span class="hljs-keyword">if</span>(RetVal == <span class="hljs-number">0</span>)
+         RetVal = pthread_create(&amp;g_spawn_thread, &amp;pAttrs_spawn, sl_Task, NULL);
+
+     <span class="hljs-keyword">return</span> RetVal;
+ }
+</code></pre><span class="code-title"><p><strong>secure_fs.c</strong></p>
+</span></div></div>
+</li>
+<li><p>Call the<code>wifi_init()</code> function from the application main thread <code>secureFSExampleThread()</code> that we added earlier to <code>secure_fs.c</code>. Then we will call <code>sl_Start()</code> to start the network processor. Copy and paste the following code inside <code>secureFSExampleThread()</code> <strong>before the while loop</strong>:</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_5')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_5" class="lang-c hljs cpp"> <span class="hljs-keyword">int</span> RetVal;
+
+ <span class="hljs-comment">/* Terminal Initialization */</span>
+ InitTerm();
+
+ <span class="hljs-comment">/* Wifi Enabling */</span>
+ RetVal = wifi_init();
+ <span class="hljs-keyword">if</span>(RetVal &lt; <span class="hljs-number">0</span>)
+ {
+     UART_PRINT(<span class="hljs-string">"wifi_init error:  %d\n\r"</span>, RetVal);
+     <span class="hljs-keyword">return</span> NULL;
+ }
+
+ <span class="hljs-comment">/* Powerup the CC3x20 Network Processor */</span> 
+ RetVal = sl_Start(<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+ <span class="hljs-keyword">if</span>(RetVal &lt; <span class="hljs-number">0</span>)
+ {
+     UART_PRINT(<span class="hljs-string">"sl_Start error:  %d\n\r"</span>, RetVal);
+     <span class="hljs-keyword">return</span> NULL;
+ }
+ <span class="hljs-comment">// Device is awake (the exact role is not relevant for this example)</span>
+ <span class="hljs-comment">// and ready for processing FS commands</span>
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong></p>
+</span></div></div>
+</li>
+</ol>
+<h1 id="task-2-retrieving-file-system-information">Task 2: Retrieving file system information</h1>
+<ol>
+<li><p>Enter the following code into <code>secure_fs.c</code> to present the storage information and list of files in a readable format.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_6')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_6" class="lang-c hljs cpp"> <span class="hljs-keyword">static</span> _<span class="hljs-function">i32 <span class="hljs-title">st_ShowStorageInfo</span><span class="hljs-params">()</span>
+ </span>{
+     _i32        RetVal = <span class="hljs-number">0</span>;
+     _i32        size;
+     _i32        used;
+     _i32        avail;
+     SlFsControlGetStorageInfoResponse_t storageInfo;
+
+     UART_PRINT(<span class="hljs-string">"\n\rGet Storage Info:\n\r"</span>);
+
+     RetVal = sl_FsCtl(( SlFsCtl_e)SL_FS_CTL_GET_STORAGE_INFO,
+                    <span class="hljs-number">0</span>,
+                    NULL ,
+                    NULL ,
+                    <span class="hljs-number">0</span>,
+                    (_u8 *)&amp;storageInfo,
+                    <span class="hljs-keyword">sizeof</span>(SlFsControlGetStorageInfoResponse_t),
+                    NULL );
+
+     <span class="hljs-keyword">if</span>(RetVal &lt; <span class="hljs-number">0</span>)
+     {
+         UART_PRINT(<span class="hljs-string">"sl_FsCtl error: %d\n\r"</span>);
+     }
+
+     size = (storageInfo.DeviceUsage.DeviceBlocksCapacity *
+             storageInfo.DeviceUsage.DeviceBlockSize) / <span class="hljs-number">1024</span>;
+     UART_PRINT(<span class="hljs-string">"Total space: %dK\n\r\n\r"</span>, size);
+
+     UART_PRINT(<span class="hljs-string">"Filestsyem      Size \tUsed \tAvail\t\n\r"</span>);
+
+     size = ((storageInfo.DeviceUsage.NumOfAvailableBlocksForUserFiles +
+             storageInfo.DeviceUsage.NumOfAllocatedBlocks) *
+             storageInfo.DeviceUsage.DeviceBlockSize) / <span class="hljs-number">1024</span>;
+
+     used = (storageInfo.DeviceUsage.NumOfAllocatedBlocks *
+             storageInfo.DeviceUsage.DeviceBlockSize) / <span class="hljs-number">1024</span>;
+
+     avail = (storageInfo.DeviceUsage.NumOfAvailableBlocksForUserFiles *
+             storageInfo.DeviceUsage.DeviceBlockSize) / <span class="hljs-number">1024</span>;
+
+     UART_PRINT(<span class="hljs-string">"%-15s %dK \t%dK \t%dK \t\n\r"</span>, <span class="hljs-string">"User"</span>, size, used, avail);
+
+     size = (storageInfo.DeviceUsage.NumOfReservedBlocksForSystemfiles *
+             storageInfo.DeviceUsage.DeviceBlockSize) / <span class="hljs-number">1024</span>;
+
+     UART_PRINT(<span class="hljs-string">"%-15s %dK \n\r"</span>, <span class="hljs-string">"System"</span>, size);
+
+     size = (storageInfo.DeviceUsage.NumOfReservedBlocks *
+             storageInfo.DeviceUsage.DeviceBlockSize) / <span class="hljs-number">1024</span>;
+
+     UART_PRINT(<span class="hljs-string">"%-15s %dK \n\r"</span>, <span class="hljs-string">"Reserved"</span>, size);
+
+     UART_PRINT(<span class="hljs-string">"\n\r"</span>);
+     UART_PRINT(<span class="hljs-string">"\n\r"</span>);
+
+     UART_PRINT(<span class="hljs-string">"%-32s: %d \n\r"</span>, <span class="hljs-string">"Max number of files"</span>,
+                storageInfo.FilesUsage.MaxFsFiles);
+
+     UART_PRINT(<span class="hljs-string">"%-32s: %d \n\r"</span>, <span class="hljs-string">"Max number of system files"</span>,
+                storageInfo.FilesUsage.MaxFsFilesReservedForSysFiles);
+
+     UART_PRINT(<span class="hljs-string">"%-32s: %d \n\r"</span>, <span class="hljs-string">"Number of user files"</span>,
+                storageInfo.FilesUsage.ActualNumOfUserFiles);
+
+     UART_PRINT(<span class="hljs-string">"%-32s: %d \n\r"</span>, <span class="hljs-string">"Number of system files"</span>,
+                storageInfo.FilesUsage.ActualNumOfSysFiles);
+
+     UART_PRINT(<span class="hljs-string">"%-32s: %d \n\r"</span>, <span class="hljs-string">"Number of alert"</span>,
+                storageInfo.FilesUsage.NumOfAlerts);
+
+     UART_PRINT(<span class="hljs-string">"%-32s: %d \n\r"</span>, <span class="hljs-string">"Number Alert threshold"</span>,
+                storageInfo.FilesUsage.NumOfAlertsThreshold);
+
+     UART_PRINT(<span class="hljs-string">"%-32s: %d \n\r"</span>, <span class="hljs-string">"FAT write counter"</span>,
+                storageInfo.FilesUsage.FATWriteCounter);
+
+     UART_PRINT(<span class="hljs-string">"%-32s: "</span>, <span class="hljs-string">"Bundle state"</span>);
+
+     <span class="hljs-keyword">if</span>(storageInfo.FilesUsage.Bundlestate == SL_FS_BUNDLE_STATE_STOPPED)
+     {
+         UART_PRINT(<span class="hljs-string">"%s \n\r"</span>, <span class="hljs-string">"Stopped"</span>);
+     }
+     <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span>(storageInfo.FilesUsage.Bundlestate == SL_FS_BUNDLE_STATE_STARTED)
+     {
+         UART_PRINT(<span class="hljs-string">"%s \n\r"</span>, <span class="hljs-string">"Started"</span>);
+     }
+     <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span>(storageInfo.FilesUsage.Bundlestate ==
+             SL_FS_BUNDLE_STATE_PENDING_COMMIT)
+     {
+         UART_PRINT(<span class="hljs-string">"%s \n\r"</span>, <span class="hljs-string">"Commit pending"</span>);
+     }
+
+     UART_PRINT(<span class="hljs-string">"\n\r"</span>);
+
+     <span class="hljs-keyword">return</span> RetVal;
+ }
+
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> MAX_FILE_ENTRIES 4</span>
+
+ <span class="hljs-keyword">typedef</span> <span class="hljs-keyword">struct</span>
+ {
+     SlFileAttributes_t attribute;
+     <span class="hljs-keyword">char</span> fileName[SL_FS_MAX_FILE_NAME_LENGTH];
+ } slGetfileList_t;
+
+ <span class="hljs-keyword">static</span> _<span class="hljs-function">i32 <span class="hljs-title">st_listFiles</span><span class="hljs-params">(_i32 numOfFiles, <span class="hljs-keyword">int</span> bPrintDescription)</span>
+ </span>{
+     <span class="hljs-keyword">int</span> retVal = SL_ERROR_BSD_ENOMEM;
+     _i32            index = -<span class="hljs-number">1</span>;
+     _i32 fileCount = <span class="hljs-number">0</span>;
+     slGetfileList_t *buffer = <span class="hljs-built_in">malloc</span>(MAX_FILE_ENTRIES * <span class="hljs-keyword">sizeof</span>(slGetfileList_t));
+
+     UART_PRINT(<span class="hljs-string">"\n\rRead files list:\n\r"</span>);
+     <span class="hljs-keyword">if</span>(buffer)
+     {
+         <span class="hljs-keyword">while</span>( numOfFiles &gt; <span class="hljs-number">0</span> )
+         {
+             _i32 i;
+             _i32 numOfEntries = (numOfFiles &lt; MAX_FILE_ENTRIES) ? numOfFiles : MAX_FILE_ENTRIES;
+
+             <span class="hljs-comment">// Get FS list</span>
+             retVal = sl_FsGetFileList(&amp;index,
+                                       numOfEntries,
+                                       <span class="hljs-keyword">sizeof</span>(slGetfileList_t),
+                                       (_u8*)buffer,
+                                       SL_FS_GET_FILE_ATTRIBUTES);
+             <span class="hljs-keyword">if</span>(retVal &lt; <span class="hljs-number">0</span>)
+             {
+                 UART_PRINT(<span class="hljs-string">"sl_FsGetFileList error:  %d\n\r"</span>, retVal);
+                 <span class="hljs-keyword">break</span>;
+             }
+             <span class="hljs-keyword">if</span>(retVal == <span class="hljs-number">0</span>)
+             {
+                 <span class="hljs-keyword">break</span>;
+             }
+
+             <span class="hljs-comment">// Print single column format</span>
+             <span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; retVal; i++)
+             {
+                 UART_PRINT(<span class="hljs-string">"[%3d] "</span>, ++fileCount);
+                 UART_PRINT(<span class="hljs-string">"%-40s\t"</span>, buffer[i].fileName);
+                 UART_PRINT(<span class="hljs-string">"%8d\t"</span>, buffer[i].attribute.FileMaxSize);
+                 UART_PRINT(<span class="hljs-string">"0x%03x\t"</span>, buffer[i].attribute.Properties);
+                 UART_PRINT(<span class="hljs-string">"\n\r"</span>);
+             }
+             numOfFiles -= retVal;
+         }
+         UART_PRINT(<span class="hljs-string">"\n\r"</span>);
+
+         <span class="hljs-keyword">if</span>(bPrintDescription)
+         {
+             UART_PRINT(<span class="hljs-string">" File properties flags description:\n\r"</span>);
+             UART_PRINT(<span class="hljs-string">" 0x001 - Open file commit\n\r"</span>);
+             UART_PRINT(<span class="hljs-string">" 0x002 - Open bundle commit\n\r"</span>);
+             UART_PRINT(<span class="hljs-string">" 0x004 - Pending file commit\n\r"</span>);
+             UART_PRINT(<span class="hljs-string">" 0x008 - Pending bundle commit\n\r"</span>);
+             UART_PRINT(<span class="hljs-string">" 0x010 - Secure file\n\r"</span>);
+             UART_PRINT(<span class="hljs-string">" 0x020 - No file safe\n\r"</span>);
+             UART_PRINT(<span class="hljs-string">" 0x040 - System file\n\r"</span>);
+             UART_PRINT(<span class="hljs-string">" 0x080 - System with user access\n\r"</span>);
+             UART_PRINT(<span class="hljs-string">" 0x100 - No valid copy\n\r"</span>);
+             UART_PRINT(<span class="hljs-string">" 0x200 - Public write\n\r"</span>);
+             UART_PRINT(<span class="hljs-string">" 0x400 - Public read\n\r"</span>);
+             UART_PRINT(<span class="hljs-string">"\n\r"</span>);
+         }
+         <span class="hljs-built_in">free</span> (buffer);
+     }
+
+     <span class="hljs-keyword">return</span> retVal;
+ }
+</code></pre><span class="code-title"><p><strong>secure_fs.c</strong></p>
+</span></div></div>
+</li>
+<li><p>Add the function calls to the example main thread (after <code>wifi_init()</code> and <code>sl_Start()</code>):</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_7')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_7" class="lang-c hljs cpp"> st_ShowStorageInfo();
+ st_listFiles(<span class="hljs-number">40</span>, <span class="hljs-number">1</span>);
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong></p>
+</span></div></div>
+</li>
+<li><p>Open a terminal emulation program like TeraTerm, select the UART serial port, and set the baud rate to 115200. If the terminal does not display the COM port name, refer to the device manager discussed in the <a href="http://www.ti.com/lit/swru461">CC3220 Getting Started Guide</a>.</p>
+</li>
+<li><p>Build, load, and run the example code. The following shows an example terminal output.
+ </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/term-fs_info.png" alt="" class="img-responsive"></div><p></p>
+</li>
+</ol>
+<h1 id="task-3-demonstrating-the-fail-safe-recovery-mechanism">Task 3: Demonstrating the Fail-Safe (Recovery) mechanism</h1>
+<p>The next task creates an unsecure fail-safe file and then tries to override it. The example will first demonstrate a rollback (usually due to an error in the file validation) and then show a succesfull commit.</p>
+<ol>
+<li><p>First, we will add simple "write file" and "read file" helper functions. These methods will handle fragmentation during reading from (or writing to) the network processor. Copy the following code into <code>secure_fs.c</code>.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_8')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_8" class="lang-c hljs cpp"> <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">st_writeFile</span><span class="hljs-params">( _i32 fileHandle, _u32 length, _const <span class="hljs-keyword">char</span> *buffer)</span>
+ </span>{
+     <span class="hljs-keyword">int</span> RetVal;
+     _i32 offset = <span class="hljs-number">0</span>;
+
+     <span class="hljs-keyword">while</span>(offset &lt; length)
+     {
+         <span class="hljs-comment">// write data to open file</span>
+         RetVal = sl_FsWrite(fileHandle,
+                          offset,
+                          (_u8 *)buffer,
+                          length);
+         <span class="hljs-keyword">if</span> (RetVal &lt;= <span class="hljs-number">0</span>)
+         {
+             UART_PRINT(<span class="hljs-string">"sl_FsWrite error:  %d\n\r"</span> ,RetVal);
+             <span class="hljs-keyword">return</span> RetVal;
+         }
+         <span class="hljs-keyword">else</span>
+         {
+             offset += RetVal;
+             length -= RetVal;
+         }
+
+     }
+     UART_PRINT(<span class="hljs-string">"Wrote %d bytes...\n\r"</span>, offset);
+     <span class="hljs-keyword">return</span> offset;
+ }
+
+ <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">st_readFile</span><span class="hljs-params">( _i32 fileHandle, _u32 length)</span>
+ </span>{
+     <span class="hljs-keyword">int</span> offset = <span class="hljs-number">0</span>;
+     <span class="hljs-keyword">int</span> RetVal = <span class="hljs-number">0</span>;
+     <span class="hljs-keyword">char</span> buff[<span class="hljs-number">100</span>];
+
+     <span class="hljs-keyword">while</span>(offset &lt; length)
+     {
+         RetVal = sl_FsRead(fileHandle, offset, (_u8*)buff, length);
+
+         <span class="hljs-keyword">if</span>(RetVal == SL_ERROR_FS_OFFSET_OUT_OF_RANGE)
+         {<span class="hljs-comment">// EOF</span>
+             <span class="hljs-keyword">break</span>;
+         }
+         <span class="hljs-keyword">if</span>(RetVal &lt; <span class="hljs-number">0</span>)
+         {<span class="hljs-comment">// Error</span>
+             UART_PRINT(<span class="hljs-string">"sl_FsRead error: %d\n\r"</span>, RetVal);
+             <span class="hljs-keyword">return</span> RetVal;
+         }
+
+         offset += RetVal;
+         length -= RetVal;
+     }
+     UART_PRINT(<span class="hljs-string">"Read \"%s\" (%d bytes)...\n\r"</span>, buff, offset);
+     <span class="hljs-keyword">return</span> offset;
+ }
+</code></pre><span class="code-title"><p><strong>secure_fs.c</strong></p>
+</span></div></div>
+</li>
+<li><p>We will add content for the new file and the content that will overide it.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_9')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_9" class="lang-c hljs cpp"> <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> MAX_FILE_SIZE        100</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> TEST_FILENAME        "NewFile"</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> TEST_CERTIFICATE    "dummy-trusted-cert"</span>
+
+ _const <span class="hljs-keyword">char</span> originalContent[] = <span class="hljs-string">"This is the original content!"</span>;
+ _const <span class="hljs-keyword">char</span> secondaryContent[] = <span class="hljs-string">"Overridden by the secondary content..."</span>;
+</code></pre><span class="code-title"><p><strong>secure_fs.c</strong></p>
+</span></div></div>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Code for Task 3
+</span></h4>
+<p> All code in the rest of this task should be copied-and-pasted in the given order inside <code>secureFSExampleThread()</code> <strong>before</strong> the while(1) loop.</p>
+</div>
+</li>
+<li><p>Now, let's create an unsecured file with the fail-safe option in the <code>secureFSExampleThread()</code>.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_10')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_10" class="lang-c hljs cpp"> <span class="hljs-comment">// Creating unsecured, MAX_SIZE file (this is the maximum length allowed) </span>
+ _i32 fd = sl_FsOpen(TEST_FILENAME,
+                     (SL_FS_CREATE | SL_FS_CREATE_FAILSAFE | SL_FS_CREATE_MAX_SIZE(MAX_FILE_SIZE)),
+                     <span class="hljs-number">0</span>);
+ <span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+ {
+     UART_PRINT(<span class="hljs-string">"sl_FsOpen error: %d\n\r"</span>, fd);
+ }
+ <span class="hljs-keyword">else</span>
+ {
+     st_writeFile(fd, <span class="hljs-built_in">strlen</span>(originalContent), originalContent);
+     RetVal = sl_FsClose(fd, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+     <span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+     {
+         UART_PRINT(<span class="hljs-string">"sl_FsClose error: %d\n\r"</span>, RetVal);
+     }
+ }
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong></p>
+</span></div></div>
+</li>
+<li><p>Then we can add some code to verify the successful file creation within the example thread.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_11')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_11" class="lang-c hljs cpp">     <span class="hljs-comment">// Check that the new file exists (make sure the "0x020 - No File Safe" property is disabled for the new file) </span>
+     <span class="hljs-comment">// Note that the size is rounded to the nearest block size</span>
+     st_listFiles(<span class="hljs-number">40</span>,<span class="hljs-number">0</span>);
+
+     <span class="hljs-comment">// Read the file content</span>
+     UART_PRINT(<span class="hljs-string">"Reading file after CREATION:\n\r"</span>);
+     fd = sl_FsOpen(TEST_FILENAME, SL_FS_READ, <span class="hljs-number">0</span>);
+     <span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+     {
+         UART_PRINT(<span class="hljs-string">"sl_FsOpen error: %d\n\r"</span>, fd);
+     }
+     <span class="hljs-keyword">else</span>
+     {
+         st_readFile(fd, MAX_FILE_SIZE);
+         RetVal = sl_FsClose(fd, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+         <span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+         {
+             UART_PRINT(<span class="hljs-string">"sl_FsClose error: %d\n\r"</span>, RetVal);
+         }
+     }
+</code></pre><span class="code-title"><p><strong>secure_fs :: secureFSExampleThread()</strong></p>
+</span></div></div>
+<div class="bs-callout bs-callout-default "><h4><span class="glyphicon glyphicon-hand-right gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Terminal output for the creation of a new file
+</span></h4>
+<p>     </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/term-verify_create.png" alt="" class="img-responsive"></div><p></p>
+</div>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Replacing the file content
+</span></h4>
+<p> During OTA or in normal operation, a developer may want to replace the content of a file. The file-safe option (used in the previous task) provides a mechanism that allows you to revert to the original file in case the new content is damaged. The new content is kept as a candidate while the old copy is still in flash. After the new file has been tested, it can be committed (i.e. the old content will be deleted) or it can be rolled back so the old copy becomes the valid one. This feature can be enabled for a specific file or to a group of files (each should be created with the <code>SL_FS_WRITE_BUNDLE_FILE</code>). In this case, the commit or rollback will affect the entire bundle.</p>
+</div>
+</li>
+<li><p>Assuming the <code>NewFile</code> is already in flash, we will try to override it. Note that the <code>SL_FS_WRITE_MUST_COMMIT</code> should be added to the File Open flags.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_12')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_12" class="lang-c hljs cpp"> UART_PRINT(<span class="hljs-string">"\n\r\n\r ** Replacing file content\n\r"</span>);
+ fd = sl_FsOpen(TEST_FILENAME, SL_FS_WRITE | SL_FS_WRITE_MUST_COMMIT, <span class="hljs-number">0</span>);
+ <span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+ {
+     UART_PRINT(<span class="hljs-string">"sl_FsOpen (re-write) error: %d\n\r"</span>, fd);
+ }
+ <span class="hljs-keyword">else</span>
+ {
+     st_writeFile(fd, <span class="hljs-built_in">strlen</span>(secondaryContent), secondaryContent);
+     RetVal = sl_FsClose(fd, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+     <span class="hljs-keyword">if</span>(RetVal &lt; <span class="hljs-number">0</span>)
+     {
+         UART_PRINT(<span class="hljs-string">"sl_FsClose (re-write) error: %d\n\r"</span>, RetVal);
+     }
+ }
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong></p>
+</span></div></div>
+</li>
+<li><p>In order to verify that the file was re-written, we will read its content again by reusing the code from step 4. </p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_13')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_13" class="lang-c hljs cpp"><span class="hljs-comment">// Read the file content</span>
+UART_PRINT(<span class="hljs-string">"Reading File before ROLLBACK:\n\r"</span>);
+fd = sl_FsOpen(TEST_FILENAME, SL_FS_READ, <span class="hljs-number">0</span>);
+<span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+{
+    UART_PRINT(<span class="hljs-string">"sl_FsOpen error: %d\n\r"</span>, fd);
+}
+<span class="hljs-keyword">else</span>
+{
+    st_readFile(fd, MAX_FILE_SIZE);
+    RetVal = sl_FsClose(fd, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+    <span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+    {
+        UART_PRINT(<span class="hljs-string">"sl_FsClose error: %d\n\r"</span>, RetVal);
+    }
+}
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong></p>
+</span></div></div>
+</li>
+<li><p>After the file is re-written, we can run some sanity tests and act accordingly. We'll first follow a failure case which will trigger a rollback command. Note that in case the MCU image is replaced, it will rollback automatically upon the next MCU reset if <code>COMMIT</code> is not used.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_14')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_14" class="lang-c hljs cpp"> SlFsControl_t   FsControl;
+ RetVal = sl_FsCtl(SL_FS_CTL_ROLLBACK, <span class="hljs-number">0</span>, TEST_FILENAME, (_u8 *)&amp;FsControl, <span class="hljs-keyword">sizeof</span>(SlFsControl_t), NULL, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong></p>
+</span></div></div>
+</li>
+<li><p>If we check the file again (repeating step 4), the original content should appear.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_15')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_15" class="lang-c hljs cpp"><span class="hljs-comment">// Read the file content</span>
+UART_PRINT(<span class="hljs-string">"Reading File after ROLLBACK:\n\r"</span>);
+fd = sl_FsOpen(TEST_FILENAME, SL_FS_READ, <span class="hljs-number">0</span>);
+<span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+{
+   UART_PRINT(<span class="hljs-string">"sl_FsOpen error: %d\n\r"</span>, fd);
+}
+<span class="hljs-keyword">else</span>
+{
+   st_readFile(fd, MAX_FILE_SIZE);
+   RetVal = sl_FsClose(fd, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+   <span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+   {
+       UART_PRINT(<span class="hljs-string">"sl_FsClose error: %d\n\r"</span>, RetVal);
+   }
+}
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong></p>
+</span></div></div>
+</li>
+<li><p>To test a successful file replacement, repeat steps 5-7, but use <code>SL_FS_CTL_COMMIT</code> in step 7 (instead of the <code>SL_FS_CTL_ROLLBACK</code>).</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_16')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_16" class="lang-c hljs cpp"> UART_PRINT(<span class="hljs-string">"\n\r\n\r ** Replacing file content (again)\n\r"</span>);
+ fd = sl_FsOpen(TEST_FILENAME, SL_FS_WRITE | SL_FS_WRITE_MUST_COMMIT, <span class="hljs-number">0</span>);
+ <span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+ {
+     UART_PRINT(<span class="hljs-string">"sl_FsOpen (re-write) error: %d\n\r"</span>, fd);
+ }
+ <span class="hljs-keyword">else</span>
+ {
+     st_writeFile(fd, <span class="hljs-built_in">strlen</span>(secondaryContent), secondaryContent);
+     RetVal = sl_FsClose(fd, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+     <span class="hljs-keyword">if</span>(RetVal &lt; <span class="hljs-number">0</span>)
+     {
+         UART_PRINT(<span class="hljs-string">"sl_FsClose (re-write) error: %d\n\r"</span>, RetVal);
+     }
+ }
+
+ <span class="hljs-comment">// Read the file content</span>
+ UART_PRINT(<span class="hljs-string">"Reading File before COMMIT:\n\r"</span>);
+ fd = sl_FsOpen(TEST_FILENAME, SL_FS_READ, <span class="hljs-number">0</span>);
+ <span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+ {
+     UART_PRINT(<span class="hljs-string">"sl_FsOpen error: %d\n\r"</span>, fd);
+ }
+ <span class="hljs-keyword">else</span>
+ {
+     st_readFile(fd, MAX_FILE_SIZE);
+     RetVal = sl_FsClose(fd, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+     <span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+     {
+         UART_PRINT(<span class="hljs-string">"sl_FsClose error: %d\n\r"</span>, RetVal);
+     }
+ }
+
+ RetVal = sl_FsCtl(SL_FS_CTL_COMMIT, <span class="hljs-number">0</span>, TEST_FILENAME, (_u8 *)&amp;FsControl, <span class="hljs-keyword">sizeof</span>(SlFsControl_t), NULL, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong></p>
+</span></div></div>
+</li>
+<li><p>If we check the file again (repeating step 4), now the secondary content should appear.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_17')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_17" class="lang-c hljs cpp"><span class="hljs-comment">// Read the file content</span>
+UART_PRINT(<span class="hljs-string">"Reading file after COMMIT:\n\r"</span>);
+fd = sl_FsOpen(TEST_FILENAME, SL_FS_READ, <span class="hljs-number">0</span>);
+<span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+{
+    UART_PRINT(<span class="hljs-string">"sl_FsOpen error: %d\n\r"</span>, fd);
+}
+<span class="hljs-keyword">else</span>
+{
+    st_readFile(fd, MAX_FILE_SIZE);
+    RetVal = sl_FsClose(fd, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+    <span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+    {
+        UART_PRINT(<span class="hljs-string">"sl_FsClose error: %d\n\r"</span>, RetVal);
+    }
+}
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong></p>
+</span></div></div>
+</li>
+<li><p>To complete this task, we will delete the file from the file system and verify.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_18')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_18" class="lang-c hljs cpp">UART_PRINT(<span class="hljs-string">"\n\r\n\r ** Deleting the file\n\r"</span>);
+RetVal = sl_FsDel(TEST_FILENAME, <span class="hljs-number">0</span>);
+st_listFiles(<span class="hljs-number">40</span>,<span class="hljs-number">0</span>);
+UART_PRINT(<span class="hljs-string">"Example complete\n\r"</span>);
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong></p>
+</span></div></div>
+</li>
+<li><p>Build and run the example. Verify the results using the debug terminal.
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/term-task3.png" alt="" class="img-responsive"></div><p></p>
+</li>
+</ol>
+<div class="panel-group">
+  <div class="panel panel-success">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle collapsed" data-toggle="collapse" href="#expandable_-click-to-see-the-full-example-code-for-tasks-2-3-"><p> Click to see the full example code for Tasks 2-3</p>
+</a>
+      </h4>
+    </div>
+    <div id="expandable_-click-to-see-the-full-example-code-for-tasks-2-3-" class="panel-collapse collapse">
+      <div class="panel-body"><p>    Note that the following code example uses some additional helper methods to simplify the implementation.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_19')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_19" class="lang-c hljs cpp">    <span class="hljs-comment">/*
+    *   Copyright (C) 2016 Texas Instruments Incorporated
+    *
+    *   All rights reserved. Property of Texas Instruments Incorporated.
+    *   Restricted rights to use, duplicate or disclose this code are
+    *   granted through contract.
+    *
+    *   The program may not be used without the written permission of
+    *   Texas Instruments Incorporated or against the terms and conditions
+    *   stipulated in the agreement under which this program has been supplied,
+    *   and under no circumstances can it be used with non-TI connectivity device.
+    *
+    */</span>
+
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdint.h&gt;</span>
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stddef.h&gt;</span>
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;unistd.h&gt;</span>
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdarg.h&gt;</span>
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdlib.h&gt;</span>
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdio.h&gt;</span>
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;string.h&gt;</span>
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/drivers/net/wifi/simplelink.h&gt;</span>
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;pthread.h&gt;</span>
+
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> "Board.h"</span>
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> "uart_term.h"</span>
+
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> SPAWN_TASK_PRIORITY     (9)</span>
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> TASK_STACK_SIZE         (2048)</span>
+
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> MAX_FILE_SIZE 100</span>
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> TEST_FILENAME "NewFile"</span>
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> TEST_CERTIFICATE "dummy-trusted-cert"</span>
+    <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> MAX_FILE_ENTRIES 4</span>
+
+    <span class="hljs-keyword">typedef</span> <span class="hljs-keyword">struct</span>
+    {
+        SlFileAttributes_t attribute;
+        <span class="hljs-keyword">char</span> fileName[SL_FS_MAX_FILE_NAME_LENGTH];
+    } slGetfileList_t;
+
+    _const <span class="hljs-keyword">char</span> originalContent[] = <span class="hljs-string">"This is the original content!"</span>;
+    _const <span class="hljs-keyword">char</span> secondaryContent[] = <span class="hljs-string">"Overridden by the secondary content..."</span>;
+
+    <span class="hljs-comment">/************************************************************************
+    * Static Functions
+    *************************************************************************/</span>
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkWlanEventHandler</span><span class="hljs-params">(SlWlanEvent_t *pWlanEvent)</span>
+    </span>{
+        UART_PRINT(<span class="hljs-string">"[WLAN EVENT] pWlanEvent-&gt;Id=%d\n\r"</span>, pWlanEvent-&gt;Id);
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkFatalErrorEventHandler</span><span class="hljs-params">(SlDeviceFatal_t *slFatalErrorEvent)</span>
+    </span>{
+        UART_PRINT(<span class="hljs-string">"[FATAL ERROR EVENT] slFatalErrorEvent-&gt;Id=%d\n\r"</span>, slFatalErrorEvent-&gt;Id);
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkNetAppEventHandler</span><span class="hljs-params">(SlNetAppEvent_t *pNetAppEvent)</span>
+    </span>{
+        SlNetAppEventData_u *pNetAppEventData = NULL;
+
+        <span class="hljs-keyword">if</span>(NULL == pNetAppEvent) <span class="hljs-keyword">return</span>;
+
+        pNetAppEventData = &amp;pNetAppEvent-&gt;Data;
+
+        <span class="hljs-keyword">switch</span>(pNetAppEvent-&gt;Id)
+        {
+            <span class="hljs-keyword">case</span> SL_NETAPP_EVENT_IPV4_ACQUIRED:
+            {
+                UART_PRINT(<span class="hljs-string">"[NETAPP EVENT] IPv4 acquired: IP = %d.%d.%d.%d\n\r"</span>,/
+                (<span class="hljs-keyword">uint8_t</span>)SL_IPV4_BYTE(pNetAppEventData-&gt;IpAcquiredV4.Ip,<span class="hljs-number">3</span>),/
+                (<span class="hljs-keyword">uint8_t</span>)SL_IPV4_BYTE(pNetAppEventData-&gt;IpAcquiredV4.Ip,<span class="hljs-number">2</span>),/
+                (<span class="hljs-keyword">uint8_t</span>)SL_IPV4_BYTE(pNetAppEventData-&gt;IpAcquiredV4.Ip,<span class="hljs-number">1</span>),/
+                (<span class="hljs-keyword">uint8_t</span>)SL_IPV4_BYTE(pNetAppEventData-&gt;IpAcquiredV4.Ip,<span class="hljs-number">0</span>));
+                UART_PRINT(<span class="hljs-string">"               Gateway = %d.%d.%d.%d\n\r"</span>,/
+                (<span class="hljs-keyword">uint8_t</span>)SL_IPV4_BYTE(pNetAppEventData-&gt;IpAcquiredV4.Gateway,<span class="hljs-number">3</span>),/
+                (<span class="hljs-keyword">uint8_t</span>)SL_IPV4_BYTE(pNetAppEventData-&gt;IpAcquiredV4.Gateway,<span class="hljs-number">2</span>),/
+                (<span class="hljs-keyword">uint8_t</span>)SL_IPV4_BYTE(pNetAppEventData-&gt;IpAcquiredV4.Gateway,<span class="hljs-number">1</span>),/
+                (<span class="hljs-keyword">uint8_t</span>)SL_IPV4_BYTE(pNetAppEventData-&gt;IpAcquiredV4.Gateway,<span class="hljs-number">0</span>));
+
+            }
+            <span class="hljs-keyword">break</span>;
+
+            <span class="hljs-keyword">case</span> SL_NETAPP_EVENT_IPV4_LOST:
+            <span class="hljs-keyword">case</span> SL_NETAPP_EVENT_DHCP_IPV4_ACQUIRE_TIMEOUT:
+            {
+                UART_PRINT(<span class="hljs-string">"[NETAPP EVENT] IPv4 lost Id or timeout, Id [0x%x]!!!\n\r"</span>, pNetAppEvent-&gt;Id);
+                <span class="hljs-comment">//SignalEvent(APP_EVENT_DISCONNECT); /* use existing disconnect event, no need for another event */</span>
+            }
+            <span class="hljs-keyword">break</span>;
+
+            <span class="hljs-keyword">case</span> SL_NETAPP_EVENT_IPV6_ACQUIRED:
+            UART_PRINT(<span class="hljs-string">"[NETAPP EVENT] IPv6 acquired by the device\n\r"</span>);
+            <span class="hljs-keyword">break</span>;
+
+            <span class="hljs-keyword">case</span> SL_NETAPP_EVENT_DHCPV4_LEASED:
+            UART_PRINT(<span class="hljs-string">"[NETAPP EVENT] IP Leased to Client\n\r"</span>);
+            <span class="hljs-keyword">break</span>;
+
+            <span class="hljs-keyword">case</span> SL_NETAPP_EVENT_DHCPV4_RELEASED:
+            UART_PRINT(<span class="hljs-string">"[NETAPP EVENT] IP Released to Client\n\r"</span>);
+            <span class="hljs-keyword">break</span>;
+
+            <span class="hljs-keyword">default</span>:
+            {
+                UART_PRINT(<span class="hljs-string">"[NETAPP EVENT] Unexpected event with Id [0x%x] \n\r"</span>, pNetAppEvent-&gt;Id);
+            }
+            <span class="hljs-keyword">break</span>;
+        }
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkHttpServerEventHandler</span><span class="hljs-params">(SlNetAppHttpServerEvent_t *pHttpEvent,
+    SlNetAppHttpServerResponse_t *pHttpResponse)</span>
+    </span>{
+        UART_PRINT(<span class="hljs-string">"[HTTP SERVER EVENT] Unexpected HTTP server event \n\r"</span>);
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkGeneralEventHandler</span><span class="hljs-params">(SlDeviceEvent_t *pDevEvent)</span>
+    </span>{
+        UART_PRINT(<span class="hljs-string">"[GENERAL EVENT] pDevEvent-&gt;Id=%d\n\r"</span>, pDevEvent-&gt;Id);
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkSockEventHandler</span><span class="hljs-params">(SlSockEvent_t *pSock)</span>
+    </span>{
+        UART_PRINT(<span class="hljs-string">"[SOCKET EVENT] pSock-&gt;Event=%d\n\r"</span>, pSock-&gt;Event);
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkNetAppRequestMemFreeEventHandler</span> <span class="hljs-params">(<span class="hljs-keyword">uint8_t</span> *buffer)</span>
+    </span>{
+        <span class="hljs-comment">/* Unused in this application */</span>
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">SimpleLinkNetAppRequestEventHandler</span> <span class="hljs-params">(SlNetAppRequest_t *pNetAppRequest, SlNetAppResponse_t *pNetAppResponse)</span>
+    </span>{
+        <span class="hljs-comment">/* Unused in this application */</span>
+    }
+
+
+    <span class="hljs-comment">/* st_wifiInit -
+    * enables the inetrface to the CC3X20 Network Processor
+    */</span>
+    <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">st_wifiInit</span><span class="hljs-params">()</span>
+    </span>{
+        <span class="hljs-keyword">int</span> RetVal;
+        pthread_attr_t      pAttrs_spawn;
+        pthread_t g_spawn_thread = (pthread_t)NULL;
+        <span class="hljs-keyword">struct</span> sched_param  priParam;
+
+        Board_initGPIO();
+        SPI_init();
+
+        <span class="hljs-comment">//create the sl_Task</span>
+        pthread_attr_init(&amp;pAttrs_spawn);
+        priParam.sched_priority = SPAWN_TASK_PRIORITY;
+        RetVal = pthread_attr_setschedparam(&amp;pAttrs_spawn, &amp;priParam);
+        RetVal |= pthread_attr_setstacksize(&amp;pAttrs_spawn, TASK_STACK_SIZE);
+
+        <span class="hljs-keyword">if</span>(RetVal == <span class="hljs-number">0</span>)
+        RetVal = pthread_create(&amp;g_spawn_thread, &amp;pAttrs_spawn, sl_Task, NULL);
+
+        <span class="hljs-keyword">return</span> RetVal;
+    }
+
+    <span class="hljs-comment">/* st_showStorageInfo -
+    * Retrieves and displays the storage information
+    */</span>
+    <span class="hljs-keyword">static</span> _<span class="hljs-function">i32 <span class="hljs-title">st_showStorageInfo</span><span class="hljs-params">()</span>
+    </span>{
+        _i32        RetVal = <span class="hljs-number">0</span>;
+        _i32        size;
+        _i32        used;
+        _i32        avail;
+        SlFsControlGetStorageInfoResponse_t storageInfo;
+
+        UART_PRINT(<span class="hljs-string">"\n\rGet Storage Info:\n\r"</span>);
+
+        RetVal = sl_FsCtl(( SlFsCtl_e)SL_FS_CTL_GET_STORAGE_INFO,
+        <span class="hljs-number">0</span>,
+        NULL ,
+        NULL ,
+        <span class="hljs-number">0</span>,
+        (_u8 *)&amp;storageInfo,
+        <span class="hljs-keyword">sizeof</span>(SlFsControlGetStorageInfoResponse_t),
+        NULL );
+
+        <span class="hljs-keyword">if</span>(RetVal &lt; <span class="hljs-number">0</span>)
+        {
+            UART_PRINT(<span class="hljs-string">"sl_FsCtl error: %d\n\r"</span>);
+        }
+
+        size = (storageInfo.DeviceUsage.DeviceBlocksCapacity *
+        storageInfo.DeviceUsage.DeviceBlockSize) / <span class="hljs-number">1024</span>;
+        UART_PRINT(<span class="hljs-string">"Total space: %dK\n\r\n\r"</span>, size);
+
+        UART_PRINT(<span class="hljs-string">"Filestsyem      Size \tUsed \tAvail\t\n\r"</span>);
+
+        size = ((storageInfo.DeviceUsage.NumOfAvailableBlocksForUserFiles +
+        storageInfo.DeviceUsage.NumOfAllocatedBlocks) *
+        storageInfo.DeviceUsage.DeviceBlockSize) / <span class="hljs-number">1024</span>;
+
+        used = (storageInfo.DeviceUsage.NumOfAllocatedBlocks *
+        storageInfo.DeviceUsage.DeviceBlockSize) / <span class="hljs-number">1024</span>;
+
+        avail = (storageInfo.DeviceUsage.NumOfAvailableBlocksForUserFiles *
+        storageInfo.DeviceUsage.DeviceBlockSize) / <span class="hljs-number">1024</span>;
+
+        UART_PRINT(<span class="hljs-string">"%-15s %dK \t%dK \t%dK \t\n\r"</span>, <span class="hljs-string">"User"</span>, size, used, avail);
+
+        size = (storageInfo.DeviceUsage.NumOfReservedBlocksForSystemfiles *
+        storageInfo.DeviceUsage.DeviceBlockSize) / <span class="hljs-number">1024</span>;
+
+        UART_PRINT(<span class="hljs-string">"%-15s %dK \n\r"</span>, <span class="hljs-string">"System"</span>, size);
+
+        size = (storageInfo.DeviceUsage.NumOfReservedBlocks *
+        storageInfo.DeviceUsage.DeviceBlockSize) / <span class="hljs-number">1024</span>;
+
+        UART_PRINT(<span class="hljs-string">"%-15s %dK \n\r"</span>, <span class="hljs-string">"Reserved"</span>, size);
+
+        UART_PRINT(<span class="hljs-string">"\n\r"</span>);
+        UART_PRINT(<span class="hljs-string">"\n\r"</span>);
+
+        UART_PRINT(<span class="hljs-string">"%-32s: %d \n\r"</span>, <span class="hljs-string">"Max number of files"</span>,
+        storageInfo.FilesUsage.MaxFsFiles);
+
+        UART_PRINT(<span class="hljs-string">"%-32s: %d \n\r"</span>, <span class="hljs-string">"Max number of system files"</span>,
+        storageInfo.FilesUsage.MaxFsFilesReservedForSysFiles);
+
+        UART_PRINT(<span class="hljs-string">"%-32s: %d \n\r"</span>, <span class="hljs-string">"Number of user files"</span>,
+        storageInfo.FilesUsage.ActualNumOfUserFiles);
+
+        UART_PRINT(<span class="hljs-string">"%-32s: %d \n\r"</span>, <span class="hljs-string">"Number of system files"</span>,
+        storageInfo.FilesUsage.ActualNumOfSysFiles);
+
+        UART_PRINT(<span class="hljs-string">"%-32s: %d \n\r"</span>, <span class="hljs-string">"Number of alert"</span>,
+        storageInfo.FilesUsage.NumOfAlerts);
+
+        UART_PRINT(<span class="hljs-string">"%-32s: %d \n\r"</span>, <span class="hljs-string">"Number Alert threshold"</span>,
+        storageInfo.FilesUsage.NumOfAlertsThreshold);
+
+        UART_PRINT(<span class="hljs-string">"%-32s: %d \n\r"</span>, <span class="hljs-string">"FAT write counter"</span>,
+        storageInfo.FilesUsage.FATWriteCounter);
+
+        UART_PRINT(<span class="hljs-string">"%-32s: "</span>, <span class="hljs-string">"Bundle state"</span>);
+
+        <span class="hljs-keyword">if</span>(storageInfo.FilesUsage.Bundlestate == SL_FS_BUNDLE_STATE_STOPPED)
+        {
+            UART_PRINT(<span class="hljs-string">"%s \n\r"</span>, <span class="hljs-string">"Stopped"</span>);
+        }
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span>(storageInfo.FilesUsage.Bundlestate == SL_FS_BUNDLE_STATE_STARTED)
+        {
+            UART_PRINT(<span class="hljs-string">"%s \n\r"</span>, <span class="hljs-string">"Started"</span>);
+        }
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span>(storageInfo.FilesUsage.Bundlestate ==
+        SL_FS_BUNDLE_STATE_PENDING_COMMIT)
+        {
+            UART_PRINT(<span class="hljs-string">"%s \n\r"</span>, <span class="hljs-string">"Commit pending"</span>);
+        }
+
+        UART_PRINT(<span class="hljs-string">"\n\r"</span>);
+
+        <span class="hljs-keyword">return</span> RetVal;
+    }
+
+    <span class="hljs-comment">/* st_listFiles -
+    * Retrieves and displays the list of files in the flash
+    */</span>
+    <span class="hljs-keyword">static</span> _<span class="hljs-function">i32 <span class="hljs-title">st_listFiles</span><span class="hljs-params">(<span class="hljs-keyword">int</span> bShowDescription)</span>
+    </span>{
+        <span class="hljs-keyword">int</span> retVal = SL_ERROR_BSD_ENOMEM;
+        _i32            index = -<span class="hljs-number">1</span>;
+        _i32 fileCount = <span class="hljs-number">0</span>;
+        _i32 numOfFiles = <span class="hljs-number">255</span>;
+        slGetfileList_t *buffer = <span class="hljs-built_in">malloc</span>(MAX_FILE_ENTRIES * <span class="hljs-keyword">sizeof</span>(slGetfileList_t));
+
+        UART_PRINT(<span class="hljs-string">"\n\rRead files list:\n\r"</span>);
+        <span class="hljs-keyword">if</span>(buffer)
+        {
+            <span class="hljs-keyword">while</span>( numOfFiles &gt; <span class="hljs-number">0</span> )
+            {
+                _i32 i;
+                _i32 numOfEntries = (numOfFiles &lt; MAX_FILE_ENTRIES) ? numOfFiles : MAX_FILE_ENTRIES;
+
+                <span class="hljs-comment">// Get FS list</span>
+                retVal = sl_FsGetFileList(&amp;index,
+                numOfEntries,
+                <span class="hljs-keyword">sizeof</span>(slGetfileList_t),
+                (_u8*)buffer,
+                SL_FS_GET_FILE_ATTRIBUTES);
+                <span class="hljs-keyword">if</span>(retVal &lt; <span class="hljs-number">0</span>)
+                {
+                    UART_PRINT(<span class="hljs-string">"sl_FsGetFileList error:  %d\n\r"</span>, retVal);
+                    <span class="hljs-keyword">break</span>;
+                }
+                <span class="hljs-keyword">if</span>(retVal == <span class="hljs-number">0</span>)
+                {
+                    <span class="hljs-keyword">break</span>;
+                }
+
+                <span class="hljs-comment">// Print single column format</span>
+                <span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; retVal; i++)
+                {
+                    UART_PRINT(<span class="hljs-string">"[%3d] "</span>, ++fileCount);
+                    UART_PRINT(<span class="hljs-string">"%-40s\t"</span>, buffer[i].fileName);
+                    UART_PRINT(<span class="hljs-string">"%8d\t"</span>, buffer[i].attribute.FileMaxSize);
+                    UART_PRINT(<span class="hljs-string">"0x%03x\t"</span>, buffer[i].attribute.Properties);
+                    UART_PRINT(<span class="hljs-string">"\n\r"</span>);
+                }
+                numOfFiles -= retVal;
+            }
+            UART_PRINT(<span class="hljs-string">"\n\r"</span>);
+            <span class="hljs-keyword">if</span>(bShowDescription)
+            {
+                UART_PRINT(<span class="hljs-string">" File properties flags description:\n\r"</span>);
+                UART_PRINT(<span class="hljs-string">" 0x001 - Open file commit\n\r"</span>);
+                UART_PRINT(<span class="hljs-string">" 0x002 - Open bundle commit\n\r"</span>);
+                UART_PRINT(<span class="hljs-string">" 0x004 - Pending file commit\n\r"</span>);
+                UART_PRINT(<span class="hljs-string">" 0x008 - Pending bundle commit\n\r"</span>);
+                UART_PRINT(<span class="hljs-string">" 0x010 - Secure file\n\r"</span>);
+                UART_PRINT(<span class="hljs-string">" 0x020 - No file safe\n\r"</span>);
+                UART_PRINT(<span class="hljs-string">" 0x040 - System file\n\r"</span>);
+                UART_PRINT(<span class="hljs-string">" 0x080 - System with user access\n\r"</span>);
+                UART_PRINT(<span class="hljs-string">" 0x100 - No valid copy\n\r"</span>);
+                UART_PRINT(<span class="hljs-string">" 0x200 - Public write\n\r"</span>);
+                UART_PRINT(<span class="hljs-string">" 0x400 - Public read\n\r"</span>);
+                UART_PRINT(<span class="hljs-string">"\n\r"</span>);
+            }
+            <span class="hljs-built_in">free</span> (buffer);
+        }
+
+        <span class="hljs-keyword">return</span> retVal;
+    }
+
+    <span class="hljs-comment">/* st_writeFile -
+    * Helper function for writing "length" bytes from a user buffer to a (an open) file
+    */</span>
+    <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">st_writeFile</span><span class="hljs-params">( _i32 fileHandle, _u32 length, _const <span class="hljs-keyword">char</span> *buffer)</span>
+    </span>{
+        <span class="hljs-keyword">int</span> RetVal = <span class="hljs-number">0</span>;
+        _i32 offset = <span class="hljs-number">0</span>;
+
+        <span class="hljs-keyword">while</span>(offset &lt; length)
+        {
+            <span class="hljs-comment">// write data to open file</span>
+            RetVal = sl_FsWrite(fileHandle,
+            offset,
+            (_u8 *)buffer,
+            length);
+            <span class="hljs-keyword">if</span> (RetVal &lt;= <span class="hljs-number">0</span>)
+            {
+                UART_PRINT(<span class="hljs-string">"sl_FsWrite error:  %d\n\r"</span> ,RetVal);
+                <span class="hljs-keyword">return</span> RetVal;
+            }
+            <span class="hljs-keyword">else</span>
+            {
+                offset += RetVal;
+                length -= RetVal;
+            }
+
+        }
+        UART_PRINT(<span class="hljs-string">"   Wrote %d bytes...\n\r"</span>, offset);
+        <span class="hljs-keyword">return</span> offset;
+    }
+
+    <span class="hljs-comment">/* st_writeFile -
+    * Helper function for reading "length" bytes from an open file to the user buffer.
+    * (also prints the read content as a string).
+    */</span>
+    <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> <span class="hljs-title">st_readFile</span><span class="hljs-params">( _i32 fileHandle, _u32 length, _i8 *buffer)</span>
+    </span>{
+        <span class="hljs-keyword">int</span> offset = <span class="hljs-number">0</span>;
+        <span class="hljs-keyword">int</span> RetVal = <span class="hljs-number">0</span>;
+
+        <span class="hljs-keyword">while</span>(offset &lt; length)
+        {
+            RetVal = sl_FsRead(fileHandle, offset, (_u8*)buffer, length);
+
+            <span class="hljs-keyword">if</span>(RetVal == SL_ERROR_FS_OFFSET_OUT_OF_RANGE)
+            {<span class="hljs-comment">// EOF</span>
+                <span class="hljs-keyword">break</span>;
+            }
+            <span class="hljs-keyword">if</span>(RetVal &lt; <span class="hljs-number">0</span>)
+            {<span class="hljs-comment">// Error</span>
+                UART_PRINT(<span class="hljs-string">"sl_FsRead error:  %d\n\r"</span>, RetVal);
+                <span class="hljs-keyword">return</span> RetVal;
+            }
+
+            offset += RetVal;
+            length -= RetVal;
+        }
+        UART_PRINT(<span class="hljs-string">"   Read \"%s\" (%d bytes)...\n\r"</span>, buffer, offset);
+        <span class="hljs-keyword">return</span> offset;
+    }
+
+    <span class="hljs-comment">/* st_openForRead -
+    * Open and read file content
+    */</span>
+    <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">st_openForRead</span><span class="hljs-params">(<span class="hljs-keyword">const</span> _u8 *filename)</span>
+    </span>{
+        <span class="hljs-keyword">int</span> RetVal = <span class="hljs-number">0</span>;
+        _i8 buffer[MAX_FILE_SIZE];
+        _i32 fd;
+
+        fd = sl_FsOpen(filename, SL_FS_READ, <span class="hljs-number">0</span>);
+        <span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+        {
+            UART_PRINT(<span class="hljs-string">"sl_FsOpen (read) error: %d\n\r"</span>, fd);
+        }
+        <span class="hljs-keyword">else</span>
+        {
+            st_readFile(fd, MAX_FILE_SIZE, buffer);
+            RetVal = sl_FsClose(fd, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+            <span class="hljs-keyword">if</span>(RetVal &lt; <span class="hljs-number">0</span>)
+            {
+                UART_PRINT(<span class="hljs-string">"sl_FsClose (read) error: %d\n\r"</span>, RetVal);
+            }
+        }
+        <span class="hljs-keyword">return</span> RetVal;
+    }
+
+    <span class="hljs-comment">/* st_openForWrite -
+    * Open (an existing file) and re-write its content
+    */</span>
+    <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">st_openForWrite</span><span class="hljs-params">(<span class="hljs-keyword">const</span> _u8 *filename, <span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span> *content)</span>
+    </span>{
+        <span class="hljs-keyword">int</span> RetVal = <span class="hljs-number">0</span>;
+        _i32 fd;
+
+        <span class="hljs-comment">// Trying to override the file (writing new content to it)</span>
+        fd = sl_FsOpen(filename, SL_FS_WRITE | SL_FS_WRITE_MUST_COMMIT, <span class="hljs-number">0</span>);
+        <span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+        {
+            UART_PRINT(<span class="hljs-string">"sl_FsOpen (re-write) error: %d\n\r"</span>, fd);
+        }
+        <span class="hljs-keyword">else</span>
+        {
+            st_writeFile(fd, <span class="hljs-built_in">strlen</span>(secondaryContent), content);
+            RetVal = sl_FsClose(fd, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+            <span class="hljs-keyword">if</span>(RetVal &lt; <span class="hljs-number">0</span>)
+            {
+                UART_PRINT(<span class="hljs-string">"sl_FsClose (re-write) error: %d\n\r"</span>, RetVal);
+            }
+        }
+        <span class="hljs-keyword">return</span> RetVal;
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">st_task3_createFailsafeFile</span><span class="hljs-params">()</span>
+    </span>{
+        <span class="hljs-keyword">int</span> RetVal = <span class="hljs-number">0</span>;
+        _i32 fd;
+
+        UART_PRINT(<span class="hljs-string">"\n\r\n\r ** Creating the fail-safe file\n\r"</span>);
+
+        <span class="hljs-comment">/* Creating Unsecured FailSafe file */</span>
+        fd = sl_FsOpen(TEST_FILENAME,
+        (SL_FS_CREATE | SL_FS_CREATE_FAILSAFE | SL_FS_CREATE_MAX_SIZE(MAX_FILE_SIZE)),
+        <span class="hljs-number">0</span>);
+        <span class="hljs-keyword">if</span>(fd &lt; <span class="hljs-number">0</span>)
+        {
+            UART_PRINT(<span class="hljs-string">"sl_FsOpen (create) error: %d\n\r"</span>, fd);
+        }
+        <span class="hljs-keyword">else</span>
+        {
+            st_writeFile(fd, <span class="hljs-built_in">strlen</span>(originalContent), originalContent);
+            RetVal = sl_FsClose(fd, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+            <span class="hljs-keyword">if</span>(RetVal &lt; <span class="hljs-number">0</span>)
+            {
+                UART_PRINT(<span class="hljs-string">"sl_FsClose (create) error: %d\n\r"</span>, RetVal);
+            }
+        }
+
+        <span class="hljs-comment">/* Verifying the successful creation */</span>
+        st_listFiles(<span class="hljs-number">0</span>);
+
+        UART_PRINT(<span class="hljs-string">"Reading %s after CREATION:\n\r"</span>);
+        st_openForRead(TEST_FILENAME);
+
+        <span class="hljs-keyword">return</span> RetVal;
+    }
+
+    <span class="hljs-comment">/* st_task3_replaceFileContent -
+    * demonstrates the replacing of file content and the Rollback / Commit operation
+    */</span>
+    <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">st_task3_replaceFileContent</span><span class="hljs-params">()</span>
+    </span>{
+        <span class="hljs-keyword">int</span> RetVal = <span class="hljs-number">0</span>;
+        SlFsControl_t   FsControl;
+
+        UART_PRINT(<span class="hljs-string">"\n\r\n\r ** Replacing file content\n\r"</span>);
+
+        <span class="hljs-comment">// Write the secondary content to the test file</span>
+        st_openForWrite(TEST_FILENAME, secondaryContent);
+
+        UART_PRINT(<span class="hljs-string">"Reading File before ROLLBACK:\n\r"</span>);
+        st_openForRead(TEST_FILENAME);
+        RetVal = sl_FsCtl(SL_FS_CTL_ROLLBACK, <span class="hljs-number">0</span>, TEST_FILENAME, (_u8 *)&amp;FsControl, <span class="hljs-keyword">sizeof</span>(SlFsControl_t), NULL, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+        UART_PRINT(<span class="hljs-string">"Reading File after ROLLBACK:\n\r"</span>);
+        st_openForRead(TEST_FILENAME);
+
+        UART_PRINT(<span class="hljs-string">"\n\r\n\r ** Replacing file content (again)\n\r"</span>);
+
+        <span class="hljs-comment">// Re-write the secondary content to the test file</span>
+        st_openForWrite(TEST_FILENAME, secondaryContent);
+
+        UART_PRINT(<span class="hljs-string">"Reading File before COMMIT:\n\r"</span>);
+        st_openForRead(TEST_FILENAME);
+        RetVal = sl_FsCtl(SL_FS_CTL_COMMIT, <span class="hljs-number">0</span>, TEST_FILENAME, (_u8 *)&amp;FsControl, <span class="hljs-keyword">sizeof</span>(SlFsControl_t), NULL, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+        UART_PRINT(<span class="hljs-string">"Reading File after COMMIT:\n\r"</span>);
+        st_openForRead(TEST_FILENAME);
+
+        <span class="hljs-keyword">return</span> RetVal;
+    }
+
+    <span class="hljs-comment">/* st_task3_deleteFile -
+    * demonstrates file deletion
+    */</span>
+    <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">st_task3_deleteFile</span><span class="hljs-params">()</span>
+    </span>{
+        UART_PRINT(<span class="hljs-string">"\n\r\n\r ** Deleting the file\n\r"</span>);
+        sl_FsDel(TEST_FILENAME, <span class="hljs-number">0</span>);
+        st_listFiles(<span class="hljs-number">0</span>);
+        <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+    }
+
+    <span class="hljs-keyword">void</span> *secureFSExampleThread(<span class="hljs-keyword">void</span> *arg0)
+    {
+        <span class="hljs-keyword">int</span> RetVal;
+
+        InitTerm();
+
+        RetVal = st_wifiInit();
+        <span class="hljs-keyword">if</span>(RetVal &lt; <span class="hljs-number">0</span>)
+        {
+            UART_PRINT(<span class="hljs-string">"wifi_init error:  %d\n\r"</span>, RetVal);
+            <span class="hljs-keyword">return</span> NULL;
+        }
+
+        RetVal = sl_Start(<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+        <span class="hljs-keyword">if</span>(RetVal &lt; <span class="hljs-number">0</span>)
+        {
+            UART_PRINT(<span class="hljs-string">"sl_Start error:  %d\n\r"</span>, RetVal);
+            <span class="hljs-keyword">return</span> NULL;
+        }
+        <span class="hljs-comment">// Device is awake (the exact role is not relevant for this example)</span>
+        <span class="hljs-comment">// and ready for processing FS commands</span>
+
+        <span class="hljs-comment">/* Task 2: demonstrates retrieving file system information */</span>
+        UART_PRINT(<span class="hljs-string">"\n\r\n\r*** TASK 2\n\r"</span>);
+        st_showStorageInfo();
+        st_listFiles(<span class="hljs-number">1</span>);
+
+        <span class="hljs-comment">/* Task 3: file safe demonstration */</span>
+        UART_PRINT(<span class="hljs-string">"\n\r\n\r*** TASK 3\n\r"</span>);
+        RetVal = st_task3_createFailsafeFile();
+
+        <span class="hljs-keyword">if</span>(RetVal == <span class="hljs-number">0</span>) {
+            RetVal = st_task3_replaceFileContent();
+        }
+
+        <span class="hljs-keyword">if</span>(RetVal == <span class="hljs-number">0</span>) {
+            RetVal = st_task3_deleteFile();
+        }
+
+        <span class="hljs-keyword">while</span>(<span class="hljs-number">1</span>);
+    }
+</code></pre><span class="code-title"><p><strong> secure_fs.c</strong></p>
+</span></div></div>
+</div>
+    </div>
+  </div>
+</div><h1 id="task-4-using-tokens-to-control-file-access-">Task 4: Using tokens to control file access  </h1>
+<p>This task will build on the ones above. Tokens are used to control the access to secure (encrypted) files.  We will update the example code to use tokens.</p>
+<ol>
+<li><p>Add global variables to store the tokens and the file access mode.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_20')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_20" class="lang-c hljs cpp"> <span class="hljs-comment">/* The Tokens array defines the Master, Write-Read, Write-Only and Read-Only tokens
+  * (see SlFsTokenId_e).
+  */</span>
+ _u32 g_tokens[<span class="hljs-number">4</span>] = {<span class="hljs-number">0x12345678</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>};
+
+ <span class="hljs-comment">/* In this example we set the master token to a vendor-specific and static value. 
+  * To use the the tokens mechanism, the file should be created as SECURED.
+  * The NOSIGNATURE flag was added, as this task doesn't require signatures (those are demonstrated in Task 5). 
+  * If we remove the VENDOR flag, the token would be gerenated by the system and will be retrieved as output of FS API.
+  * If we remove the STATIC flag, the value will be replaced every time we write new content to the file.
+  */</span>
+ _u32 g_accessMode = SL_FS_CREATE_SECURE | SL_FS_CREATE_NOSIGNATURE |
+                     SL_FS_CREATE_VENDOR_TOKEN | SL_FS_CREATE_STATIC_TOKEN;
+</code></pre><span class="code-title"><p><strong>secure_fs.c</strong></p>
+</span></div></div>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Note
+</span></h4>
+<p> The access control (authorization) requires that we define the file as secured.</p>
+</div>
+<div class="bs-callout bs-callout-danger "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Auto-generated tokens
+</span></h4>
+<p> When using UniFlash ImageCreator to create new file, there is an issue when using auto-generated token as currently there is no method to retrieve the token value. The possible soultions are using <code>VENDOR</code> token or setting the <code>PUBLIC_WRITE</code> flags, that allows to re-write the file (e.g. in OTA) without a token. A token will still be required for reading the file.</p>
+</div>
+</li>
+<li><p>Add the access mode and the master token (pointer) to the file creation (<code>sl_FsOpen()</code>) from Task 3.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_21')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_21" class="lang-c hljs cpp"> <span class="hljs-comment">/* Creating FailSafe file */</span>
+ _i32 fd = sl_FsOpen(TEST_FILENAME,
+                 (SL_FS_CREATE | SL_FS_CREATE_FAILSAFE | SL_FS_CREATE_MAX_SIZE(MAX_FILE_SIZE) | g_accessMode),
+                 &amp;g_tokens[SL_FS_TOKEN_MASTER]);
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong> - Create file</p>
+</span></div></div>
+</li>
+<li><p>Add the  master token (pointer) to the file delete (<code>sl_FsDel()</code>) from Task 3.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_22')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_22" class="lang-c hljs cpp"> RetVal = sl_FsDel(TEST_FILENAME, g_tokens[SL_FS_TOKEN_MASTER]);
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong> - Delete file</p>
+</span></div></div>
+</li>
+<li><p>Build and execute the example. All the attempts to read from the file or write to it should fail with error -10365 (<code>SL_ERROR_FS_INVALID_TOKEN_SECURITY_ALERT</code>). The following is an example terminal output:
+  </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/term-tokens.png" alt="" class="img-responsive"></div><p></p>
+<div class="bs-callout bs-callout-danger "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Important
+</span></h4>
+<p> SimpleLink Wi-Fi devices include a Software Tamper Detection mechanism which will lock the device if the number of "invalid token" errors exceeds a certain threshold (default is 15). If you run the example several times with this failure, it will lock and reprogramming (or factory reset) will be needed.</p>
+</div>
+</li>
+<li><p>To fix this error, you'll need to add the required token to each file opening call (for <code>READ</code> and <code>WRITE</code>). You may use the master token (<code>SL_FS_TOKEN_MASTER</code>) or the Read/Write specific tokens as retrieved by <code>sl_FsGetInfo()</code>. Paste this helper function into <code>secure_fs.c</code>.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_23')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_23" class="lang-c hljs cpp">  <span class="hljs-comment">/* Call this function after the secure file is created */</span>
+  <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">st_getFileInfo</span><span class="hljs-params">()</span>
+  </span>{ 
+     SlFsFileInfo_t fileInfo;
+     <span class="hljs-keyword">int</span> RetVal;
+
+     RetVal = sl_FsGetInfo(TEST_FILENAME, g_tokens[SL_FS_TOKEN_MASTER], &amp;fileInfo);
+     <span class="hljs-keyword">if</span>(<span class="hljs-number">0</span> == RetVal)
+     {
+         g_tokens[SL_FS_TOKEN_READ_ONLY] = fileInfo.Token[SL_FS_TOKEN_READ_ONLY];
+         g_tokens[SL_FS_TOKEN_WRITE_ONLY] = fileInfo.Token[SL_FS_TOKEN_WRITE_ONLY];
+         g_tokens[SL_FS_TOKEN_WRITE_READ] = fileInfo.Token[SL_FS_TOKEN_WRITE_READ];
+     }
+     <span class="hljs-keyword">return</span> RetVal;
+  }
+</code></pre><span class="code-title"><p><strong>secure_fs.c</strong></p>
+</span></div></div>
+</li>
+<li><p>Call <code>st_getFileInfo()</code> after the secured file is created and closed in the example thread.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_24')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_24" class="lang-c hljs cpp"> st_getFileInfo();
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong></p>
+</span></div></div>
+<p> and edit all <code>sl_FsOpen()</code> calls to use the relevant tokens for write and read.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_25')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_25" class="lang-c hljs cpp"> fd = sl_FsOpen(TEST_FILENAME, SL_FS_READ, &amp;g_tokens[SL_FS_TOKEN_READ_ONLY]);
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong> - Reads</p>
+</span></div></div>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_26')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_26" class="lang-c hljs cpp"> fd = sl_FsOpen(TEST_FILENAME, SL_FS_WRITE | SL_FS_WRITE_MUST_COMMIT, &amp;g_tokens[SL_FS_TOKEN_WRITE_READ]);
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong> - Writes</p>
+</span></div></div>
+<p> You can also use master token, or use <code>WRITE_ONLY</code> instead of <code>WRITE_READ</code>.</p>
+</li>
+<li><p>Add the master token to your rollback or commit configuration commands from task 3. These are how each command would look:</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_27')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_27" class="lang-c hljs cpp"> RetVal = sl_FsCtl(SL_FS_CTL_ROLLBACK, g_tokens[SL_FS_TOKEN_MASTER], TEST_FILENAME,
+                   (_u8 *)&amp;FsControl, <span class="hljs-keyword">sizeof</span>(SlFsControl_t), NULL, <span class="hljs-number">0</span>, 
+                   &amp;g_tokens[SL_FS_TOKEN_MASTER]);
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong> - ROLLBACK</p>
+</span></div></div>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_28')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_28" class="lang-c hljs cpp"> RetVal = sl_FsCtl(SL_FS_CTL_COMMIT, g_tokens[SL_FS_TOKEN_MASTER], TEST_FILENAME,
+                   (_u8 *)&amp;FsControl, <span class="hljs-keyword">sizeof</span>(SlFsControl_t), NULL, <span class="hljs-number">0</span>, 
+                   &amp;g_tokens[SL_FS_TOKEN_MASTER]);
+</code></pre><span class="code-title"><p><strong>secure_fs.c :: secureFSExampleThread()</strong> - COMMIT</p>
+</span></div></div>
+</li>
+<li><p>Build and execute the example. There should not be any more errors.</p>
+</li>
+</ol>
+<h1 id="task-5-using-certificates-to-verify-authenticity-and-integrity">Task 5: Using certificates to verify authenticity and integrity</h1>
+<p>The authentication method used for this process is a well-known methodology. Creating a file signature verifies both the file integrity and the authentication of the file. To create a digital signature for the authentication process, the vendor must have an RSA key-pair. The certificate that holds the public key must be signed by a certificate authority. In this example, we will use the dummy "playground" certificate that is provided for development purposes only. The entire chain of trust for this certificate is verified by the device using the certificate store. A signature is required to write the service-pack and the certificate store files; the signatures for those files are supplied by TI. For any other secure signed files, no certificate is required. Integrity is checked when a file is opened for read, and authenticity is checked when a file closed after write.</p>
+<ol>
+<li><p>Be sure to have the entire "playground" dummy trusted chain on loaded onto your serial flash (<code>dummy-trusted-cert</code>, <code>dummy-trusted-ca-cert</code>, and <code>dummy-root-ca-cert</code>). Please refer to the <a href="http://www.ti.com/lit/swru461">Getting Started Guide</a> for details on flash programming.
+ </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ic-dummy_chain.png" alt="" class="img-responsive"></div><p></p>
+<div class="bs-callout bs-callout-danger "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Production releases
+</span></h4>
+<p> In a production release, the secured files should be signed using a customer certificate that was signed by a known root CA (Certificate Authority). The full list of root CAs supported by TI's certificate store is available in the SDK: <code>simplelink_cc32xx_sdk_x_xx_xx_xx/tools/cc32xx_tools/certificate-catalog/readme.html</code></p>
+</div>
+</li>
+<li><p>Next, we will create the signature using the dummy playground private-key (see <code>dummy-trusted-cert-key</code> in <code>simplelink_cc32xx_sdk_x_xx_xx_xx/tools/cc32xx_tools/certificate-playground/</code>) and <a href="https://www.openssl.org/">openssl</a> from a command line.</p>
+<p> Copy the contents of the <code>originalContent</code> array we created in task 3 (from <code>secure_fs.c</code>) to a text file (e.g: <code>origin.txt</code>) </p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_29')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_29" class="hljs coffeescript"> $ cat &gt; origin.txt
+ This <span class="hljs-keyword">is</span> the original content! &lt;Ctrl + D&gt;
+</code></pre></div></div>
+<p> and verify using the following command to read its contents:</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_30')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_30" class="hljs coffeescript"> $ cat origin.txt
+ This <span class="hljs-keyword">is</span> the original content!
+</code></pre></div></div>
+</li>
+<li><p>Use the following command to create the signature in hex format via command line. <code>dummy-trusted-cert-key</code> (found in <code>simplelink_cc32xx_sdk_x_xx_xx_xx/tools/cc32xx_tools/certificate-playground</code>) must be in the same file directory you are working in. </p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_31')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_31" class="hljs perl"> $ openssl dgst -<span class="hljs-keyword">hex</span> -c -sha1 -keyform DER -sign dummy-trusted-cert-key -out origin.<span class="hljs-keyword">hex</span>.sign  origin.txt
+</code></pre></div></div>
+<p> The result should look like:</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_32')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_32" class="hljs ruby"> <span class="hljs-variable">$ </span>cat origin.hex.sign
+ <span class="hljs-constant">RSA</span>-<span class="hljs-constant">SHA1</span>(origin.txt)= <span class="hljs-number">28</span><span class="hljs-symbol">:fa</span><span class="hljs-symbol">:</span><span class="hljs-number">72</span><span class="hljs-symbol">:ea</span><span class="hljs-symbol">:</span><span class="hljs-number">9</span><span class="hljs-symbol">e:</span><span class="hljs-symbol">fe:</span><span class="hljs-symbol">d2:</span><span class="hljs-number">8</span><span class="hljs-symbol">c:</span><span class="hljs-number">00</span><span class="hljs-symbol">:</span><span class="hljs-number">72</span><span class="hljs-symbol">:</span><span class="hljs-number">04</span><span class="hljs-symbol">:d4</span><span class="hljs-symbol">:</span><span class="hljs-number">02</span><span class="hljs-symbol">:fb</span><span class="hljs-symbol">:</span><span class="hljs-number">35</span><span class="hljs-symbol">:</span><span class="hljs-number">16</span><span class="hljs-symbol">:</span><span class="hljs-number">31</span><span class="hljs-symbol">:c9</span><span class="hljs-symbol">:</span><span class="hljs-number">6</span><span class="hljs-symbol">d:</span><span class="hljs-symbol">d8:</span><span class="hljs-number">6</span><span class="hljs-symbol">d:</span><span class="hljs-symbol">c5:</span><span class="hljs-number">26</span><span class="hljs-symbol">:</span><span class="hljs-number">8</span><span class="hljs-symbol">e:</span><span class="hljs-number">75</span><span class="hljs-symbol">:e4</span><span class="hljs-symbol">:</span><span class="hljs-number">36</span><span class="hljs-symbol">:b2</span><span class="hljs-symbol">:f3</span><span class="hljs-symbol">:df</span><span class="hljs-symbol">:ac</span><span class="hljs-symbol">:</span><span class="hljs-number">1</span><span class="hljs-symbol">d:</span><span class="hljs-number">5</span><span class="hljs-symbol">a:</span><span class="hljs-number">4</span><span class="hljs-symbol">f:</span><span class="hljs-number">80</span><span class="hljs-symbol">:</span><span class="hljs-number">46</span><span class="hljs-symbol">:f4</span><span class="hljs-symbol">:</span><span class="hljs-number">1</span><span class="hljs-symbol">e:</span><span class="hljs-number">65</span><span class="hljs-symbol">:da</span><span class="hljs-symbol">:c0</span><span class="hljs-symbol">:</span><span class="hljs-number">05</span><span class="hljs-symbol">:bf</span><span class="hljs-symbol">:</span><span class="hljs-number">29</span><span class="hljs-symbol">:ff</span><span class="hljs-symbol">:</span><span class="hljs-number">79</span><span class="hljs-symbol">:</span><span class="hljs-number">6</span><span class="hljs-symbol">d:</span><span class="hljs-number">7</span><span class="hljs-symbol">d:</span><span class="hljs-symbol">a4:</span><span class="hljs-number">29</span><span class="hljs-symbol">:</span><span class="hljs-number">79</span><span class="hljs-symbol">:</span><span class="hljs-number">54</span><span class="hljs-symbol">:d5</span><span class="hljs-symbol">:</span><span class="hljs-number">76</span><span class="hljs-symbol">:</span><span class="hljs-number">58</span><span class="hljs-symbol">:</span><span class="hljs-number">57</span><span class="hljs-symbol">:</span><span class="hljs-number">5</span><span class="hljs-symbol">f:</span><span class="hljs-symbol">f4:</span><span class="hljs-symbol">f9:</span><span class="hljs-number">53</span><span class="hljs-symbol">:</span><span class="hljs-number">7</span><span class="hljs-symbol">b:</span><span class="hljs-number">48</span><span class="hljs-symbol">:</span><span class="hljs-number">6</span><span class="hljs-symbol">b:</span><span class="hljs-number">1</span><span class="hljs-symbol">c:</span><span class="hljs-number">7</span><span class="hljs-symbol">c:</span><span class="hljs-symbol">d9:</span><span class="hljs-symbol">b1:</span><span class="hljs-number">8</span><span class="hljs-symbol">e:</span><span class="hljs-symbol">df:</span><span class="hljs-number">92</span><span class="hljs-symbol">:c0</span><span class="hljs-symbol">:</span><span class="hljs-number">4</span><span class="hljs-symbol">e:</span><span class="hljs-number">86</span><span class="hljs-symbol">:</span>0<span class="hljs-symbol">e:</span>0<span class="hljs-symbol">a:</span><span class="hljs-symbol">a9:</span><span class="hljs-number">1</span><span class="hljs-symbol">c:</span><span class="hljs-number">76</span><span class="hljs-symbol">:f0</span><span class="hljs-symbol">:</span><span class="hljs-number">53</span><span class="hljs-symbol">:f1</span><span class="hljs-symbol">:ef</span><span class="hljs-symbol">:d2</span><span class="hljs-symbol">:</span><span class="hljs-number">4</span><span class="hljs-symbol">a:</span><span class="hljs-symbol">b9:</span><span class="hljs-symbol">c6:</span><span class="hljs-symbol">ea:</span><span class="hljs-symbol">b1:</span><span class="hljs-symbol">d8:</span><span class="hljs-number">11</span><span class="hljs-symbol">:df</span><span class="hljs-symbol">:</span><span class="hljs-number">33</span><span class="hljs-symbol">:</span><span class="hljs-number">4</span><span class="hljs-symbol">d:</span><span class="hljs-number">74</span><span class="hljs-symbol">:</span><span class="hljs-number">1</span><span class="hljs-symbol">a:</span><span class="hljs-symbol">be:</span><span class="hljs-symbol">b8:</span><span class="hljs-number">68</span><span class="hljs-symbol">:ae</span><span class="hljs-symbol">:ee</span><span class="hljs-symbol">:</span><span class="hljs-number">2</span><span class="hljs-symbol">d:</span><span class="hljs-number">5</span><span class="hljs-symbol">a:</span><span class="hljs-symbol">b3:</span><span class="hljs-symbol">a5:</span><span class="hljs-number">12</span><span class="hljs-symbol">:</span><span class="hljs-number">56</span><span class="hljs-symbol">:</span><span class="hljs-number">96</span><span class="hljs-symbol">:</span><span class="hljs-number">44</span><span class="hljs-symbol">:</span><span class="hljs-number">53</span><span class="hljs-symbol">:ea</span><span class="hljs-symbol">:</span><span class="hljs-number">3</span><span class="hljs-symbol">d:</span><span class="hljs-symbol">e8:</span><span class="hljs-number">5</span><span class="hljs-symbol">b:</span><span class="hljs-symbol">b8:</span><span class="hljs-number">85</span><span class="hljs-symbol">:</span><span class="hljs-number">75</span><span class="hljs-symbol">:</span><span class="hljs-number">70</span><span class="hljs-symbol">:b9</span><span class="hljs-symbol">:</span><span class="hljs-number">34</span><span class="hljs-symbol">:</span><span class="hljs-number">50</span><span class="hljs-symbol">:b0</span><span class="hljs-symbol">:a5</span><span class="hljs-symbol">:af</span><span class="hljs-symbol">:</span><span class="hljs-number">6</span><span class="hljs-symbol">a:</span><span class="hljs-number">8</span><span class="hljs-symbol">d:</span><span class="hljs-symbol">de:</span><span class="hljs-number">4</span><span class="hljs-symbol">e:</span><span class="hljs-symbol">e0:</span><span class="hljs-number">15</span><span class="hljs-symbol">:</span><span class="hljs-number">37</span><span class="hljs-symbol">:</span><span class="hljs-number">2</span><span class="hljs-symbol">d:</span><span class="hljs-symbol">e0:</span><span class="hljs-number">39</span><span class="hljs-symbol">:d4</span><span class="hljs-symbol">:fa</span><span class="hljs-symbol">:</span><span class="hljs-number">13</span><span class="hljs-symbol">:</span><span class="hljs-number">73</span><span class="hljs-symbol">:</span><span class="hljs-number">3</span><span class="hljs-symbol">a:</span><span class="hljs-number">21</span><span class="hljs-symbol">:</span><span class="hljs-number">9</span><span class="hljs-symbol">d:</span><span class="hljs-number">16</span><span class="hljs-symbol">:aa</span><span class="hljs-symbol">:f3</span><span class="hljs-symbol">:b8</span><span class="hljs-symbol">:f0</span><span class="hljs-symbol">:</span><span class="hljs-number">9</span><span class="hljs-symbol">b:</span><span class="hljs-number">76</span><span class="hljs-symbol">:fc</span><span class="hljs-symbol">:c3</span><span class="hljs-symbol">:</span><span class="hljs-number">7</span><span class="hljs-symbol">d:</span><span class="hljs-symbol">ee:</span><span class="hljs-symbol">d4:</span><span class="hljs-number">5</span><span class="hljs-symbol">e:</span><span class="hljs-number">3</span><span class="hljs-symbol">c:</span><span class="hljs-number">9</span><span class="hljs-symbol">c:</span>0<span class="hljs-symbol">e:</span><span class="hljs-symbol">e7:</span><span class="hljs-symbol">de:</span><span class="hljs-number">88</span><span class="hljs-symbol">:</span>0<span class="hljs-symbol">d:</span><span class="hljs-number">2</span><span class="hljs-symbol">f:</span><span class="hljs-number">93</span><span class="hljs-symbol">:e4</span><span class="hljs-symbol">:b0</span><span class="hljs-symbol">:</span><span class="hljs-number">42</span><span class="hljs-symbol">:e9</span><span class="hljs-symbol">:</span><span class="hljs-number">94</span><span class="hljs-symbol">:</span><span class="hljs-number">10</span><span class="hljs-symbol">:</span><span class="hljs-number">69</span><span class="hljs-symbol">:</span><span class="hljs-number">3</span><span class="hljs-symbol">b:</span><span class="hljs-number">4</span><span class="hljs-symbol">b:</span><span class="hljs-symbol">b6:</span><span class="hljs-number">06</span><span class="hljs-symbol">:</span>0<span class="hljs-symbol">d:</span><span class="hljs-number">87</span><span class="hljs-symbol">:d1</span><span class="hljs-symbol">:</span><span class="hljs-number">74</span><span class="hljs-symbol">:</span><span class="hljs-number">6</span><span class="hljs-symbol">e:</span><span class="hljs-number">6</span><span class="hljs-symbol">c:</span><span class="hljs-symbol">f4:</span><span class="hljs-number">85</span><span class="hljs-symbol">:</span><span class="hljs-number">6</span><span class="hljs-symbol">a:</span><span class="hljs-symbol">f5:</span><span class="hljs-symbol">a3:</span><span class="hljs-symbol">ac:</span><span class="hljs-number">76</span><span class="hljs-symbol">:e7</span><span class="hljs-symbol">:b1</span><span class="hljs-symbol">:</span><span class="hljs-number">86</span><span class="hljs-symbol">:c3</span><span class="hljs-symbol">:ed</span><span class="hljs-symbol">:</span><span class="hljs-number">69</span><span class="hljs-symbol">:</span><span class="hljs-number">7</span><span class="hljs-symbol">a:</span><span class="hljs-number">11</span><span class="hljs-symbol">:</span><span class="hljs-number">71</span><span class="hljs-symbol">:</span><span class="hljs-number">10</span><span class="hljs-symbol">:</span><span class="hljs-number">26</span><span class="hljs-symbol">:b9</span><span class="hljs-symbol">:bc</span><span class="hljs-symbol">:</span><span class="hljs-number">22</span><span class="hljs-symbol">:</span><span class="hljs-number">71</span><span class="hljs-symbol">:</span><span class="hljs-number">1</span><span class="hljs-symbol">e:</span><span class="hljs-number">25</span><span class="hljs-symbol">:b1</span><span class="hljs-symbol">:c6</span><span class="hljs-symbol">:ec</span><span class="hljs-symbol">:d4</span><span class="hljs-symbol">:e0</span><span class="hljs-symbol">:</span><span class="hljs-number">61</span><span class="hljs-symbol">:a4</span><span class="hljs-symbol">:</span><span class="hljs-number">7</span><span class="hljs-symbol">b:</span><span class="hljs-number">26</span><span class="hljs-symbol">:</span><span class="hljs-number">5</span><span class="hljs-symbol">a:</span><span class="hljs-symbol">bf:</span><span class="hljs-number">70</span><span class="hljs-symbol">:bf</span><span class="hljs-symbol">:</span><span class="hljs-number">62</span><span class="hljs-symbol">:</span><span class="hljs-number">5</span><span class="hljs-symbol">e:</span><span class="hljs-symbol">bf:</span><span class="hljs-number">6</span><span class="hljs-symbol">f:</span><span class="hljs-symbol">dc:</span><span class="hljs-number">34</span><span class="hljs-symbol">:df</span><span class="hljs-symbol">:</span><span class="hljs-number">89</span><span class="hljs-symbol">:</span><span class="hljs-number">6</span><span class="hljs-symbol">a:</span><span class="hljs-number">87</span><span class="hljs-symbol">:f3</span><span class="hljs-symbol">:</span><span class="hljs-number">6</span><span class="hljs-symbol">f:</span><span class="hljs-number">37</span><span class="hljs-symbol">:</span><span class="hljs-number">75</span><span class="hljs-symbol">:</span><span class="hljs-number">2</span><span class="hljs-symbol">e:</span><span class="hljs-symbol">a9:</span><span class="hljs-symbol">a4:</span><span class="hljs-number">67</span><span class="hljs-symbol">:f6</span><span class="hljs-symbol">:</span><span class="hljs-number">90</span><span class="hljs-symbol">:</span><span class="hljs-number">97</span><span class="hljs-symbol">:ee</span><span class="hljs-symbol">:</span><span class="hljs-number">36</span><span class="hljs-symbol">:fb</span><span class="hljs-symbol">:</span><span class="hljs-number">12</span><span class="hljs-symbol">:</span><span class="hljs-number">5</span><span class="hljs-symbol">f:</span><span class="hljs-number">23</span><span class="hljs-symbol">:e7</span><span class="hljs-symbol">:</span><span class="hljs-number">98</span><span class="hljs-symbol">:a1</span><span class="hljs-symbol">:f9</span><span class="hljs-symbol">:</span><span class="hljs-number">4</span><span class="hljs-symbol">a:</span><span class="hljs-symbol">e2:</span><span class="hljs-number">48</span><span class="hljs-symbol">:dc</span><span class="hljs-symbol">:a1</span><span class="hljs-symbol">:</span><span class="hljs-number">94</span><span class="hljs-symbol">:</span><span class="hljs-number">6</span><span class="hljs-symbol">d:</span><span class="hljs-number">81</span><span class="hljs-symbol">:</span><span class="hljs-number">59</span>
+</code></pre></div></div>
+</li>
+<li><p>Convert the content of the origin.hex.sign to make it look like a C array. You may use the following commands or do it manualy:</p>
+<p> Replace all the ':' with ', 0x'</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_33')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_33" class="hljs perl"> $ sed <span class="hljs-string">'s/:/, 0x/g'</span> origin.<span class="hljs-keyword">hex</span>.sign &gt; tmp1.c
+</code></pre></div></div>
+<p> Handle the first byte (add the '0x' prefix)</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_34')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_34" class="hljs ruby"> <span class="hljs-variable">$ </span>sed <span class="hljs-string">'s/\= /= {0x/'</span> tmp1.c &gt; tmp2.c
+</code></pre></div></div>
+<p> Fix the array name</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_35')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_35" class="hljs ruby"> <span class="hljs-variable">$ </span>sed <span class="hljs-string">'s/RSA-SHA1(origin.txt)/_const char originalSignature[] /'</span> tmp2.c &gt; origin.c
+</code></pre></div></div>
+<p> Add trailing brackets '};'</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_36')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_36" class="hljs ruby"> <span class="hljs-variable">$ </span>echo <span class="hljs-string">"};"</span> <span class="hljs-prompt">&gt;&gt; </span>origin.c
+</code></pre></div></div>
+<p> The result should look like:</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_37')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_37" class="hljs ruby"> <span class="hljs-variable">$ </span>cat origin.c
+ originalSignature[] = {<span class="hljs-number">0x28</span>, <span class="hljs-number">0xfa</span>, <span class="hljs-number">0x72</span>, <span class="hljs-number">0xea</span>, <span class="hljs-number">0x9e</span>, <span class="hljs-number">0xfe</span>, <span class="hljs-number">0xd2</span>, <span class="hljs-number">0x8c</span>, <span class="hljs-number">0x00</span>, <span class="hljs-number">0x72</span>, <span class="hljs-number">0x04</span>, <span class="hljs-number">0xd4</span>, <span class="hljs-number">0x02</span>, <span class="hljs-number">0xfb</span>, <span class="hljs-number">0x35</span>, <span class="hljs-number">0x16</span>, <span class="hljs-number">0x31</span>, <span class="hljs-number">0xc9</span>, <span class="hljs-number">0x6d</span>, <span class="hljs-number">0xd8</span>, <span class="hljs-number">0x6d</span>, <span class="hljs-number">0xc5</span>, <span class="hljs-number">0x26</span>, <span class="hljs-number">0x8e</span>, <span class="hljs-number">0x75</span>, <span class="hljs-number">0xe4</span>, <span class="hljs-number">0x36</span>, <span class="hljs-number">0xb2</span>, <span class="hljs-number">0xf3</span>, <span class="hljs-number">0xdf</span>, <span class="hljs-number">0xac</span>, <span class="hljs-number">0x1d</span>, <span class="hljs-number">0x5a</span>, <span class="hljs-number">0x4f</span>, <span class="hljs-number">0x80</span>, <span class="hljs-number">0x46</span>, <span class="hljs-number">0xf4</span>, <span class="hljs-number">0x1e</span>, <span class="hljs-number">0x65</span>, <span class="hljs-number">0xda</span>, <span class="hljs-number">0xc0</span>, <span class="hljs-number">0x05</span>, <span class="hljs-number">0xbf</span>, <span class="hljs-number">0x29</span>, <span class="hljs-number">0xff</span>, <span class="hljs-number">0x79</span>, <span class="hljs-number">0x6d</span>, <span class="hljs-number">0x7d</span>, <span class="hljs-number">0xa4</span>, <span class="hljs-number">0x29</span>, <span class="hljs-number">0x79</span>, <span class="hljs-number">0x54</span>, <span class="hljs-number">0xd5</span>, <span class="hljs-number">0x76</span>, <span class="hljs-number">0x58</span>, <span class="hljs-number">0x57</span>, <span class="hljs-number">0x5f</span>, <span class="hljs-number">0xf4</span>, <span class="hljs-number">0xf9</span>, <span class="hljs-number">0x53</span>, <span class="hljs-number">0x7b</span>, <span class="hljs-number">0x48</span>, <span class="hljs-number">0x6b</span>, <span class="hljs-number">0x1c</span>, <span class="hljs-number">0x7c</span>, <span class="hljs-number">0xd9</span>, <span class="hljs-number">0xb1</span>, <span class="hljs-number">0x8e</span>, <span class="hljs-number">0xdf</span>, <span class="hljs-number">0x92</span>, <span class="hljs-number">0xc0</span>, <span class="hljs-number">0x4e</span>, <span class="hljs-number">0x86</span>, <span class="hljs-number">0x0e</span>, <span class="hljs-number">0x0a</span>, <span class="hljs-number">0xa9</span>, <span class="hljs-number">0x1c</span>, <span class="hljs-number">0x76</span>, <span class="hljs-number">0xf0</span>, <span class="hljs-number">0x53</span>, <span class="hljs-number">0xf1</span>, <span class="hljs-number">0xef</span>, <span class="hljs-number">0xd2</span>, <span class="hljs-number">0x4a</span>, <span class="hljs-number">0xb9</span>, <span class="hljs-number">0xc6</span>, <span class="hljs-number">0xea</span>, <span class="hljs-number">0xb1</span>, <span class="hljs-number">0xd8</span>, <span class="hljs-number">0x11</span>, <span class="hljs-number">0xdf</span>, <span class="hljs-number">0x33</span>, <span class="hljs-number">0x4d</span>, <span class="hljs-number">0x74</span>, <span class="hljs-number">0x1a</span>, <span class="hljs-number">0xbe</span>, <span class="hljs-number">0xb8</span>, <span class="hljs-number">0x68</span>, <span class="hljs-number">0xae</span>, <span class="hljs-number">0xee</span>, <span class="hljs-number">0x2d</span>, <span class="hljs-number">0x5a</span>, <span class="hljs-number">0xb3</span>, <span class="hljs-number">0xa5</span>, <span class="hljs-number">0x12</span>, <span class="hljs-number">0x56</span>, <span class="hljs-number">0x96</span>, <span class="hljs-number">0x44</span>, <span class="hljs-number">0x53</span>, <span class="hljs-number">0xea</span>, <span class="hljs-number">0x3d</span>, <span class="hljs-number">0xe8</span>, <span class="hljs-number">0x5b</span>, <span class="hljs-number">0xb8</span>, <span class="hljs-number">0x85</span>, <span class="hljs-number">0x75</span>, <span class="hljs-number">0x70</span>, <span class="hljs-number">0xb9</span>, <span class="hljs-number">0x34</span>, <span class="hljs-number">0x50</span>, <span class="hljs-number">0xb0</span>, <span class="hljs-number">0xa5</span>, <span class="hljs-number">0xaf</span>, <span class="hljs-number">0x6a</span>, <span class="hljs-number">0x8d</span>, <span class="hljs-number">0xde</span>, <span class="hljs-number">0x4e</span>, <span class="hljs-number">0xe0</span>, <span class="hljs-number">0x15</span>, <span class="hljs-number">0x37</span>, <span class="hljs-number">0x2d</span>, <span class="hljs-number">0xe0</span>, <span class="hljs-number">0x39</span>, <span class="hljs-number">0xd4</span>, <span class="hljs-number">0xfa</span>, <span class="hljs-number">0x13</span>, <span class="hljs-number">0x73</span>, <span class="hljs-number">0x3a</span>, <span class="hljs-number">0x21</span>, <span class="hljs-number">0x9d</span>, <span class="hljs-number">0x16</span>, <span class="hljs-number">0xaa</span>, <span class="hljs-number">0xf3</span>, <span class="hljs-number">0xb8</span>, <span class="hljs-number">0xf0</span>, <span class="hljs-number">0x9b</span>, <span class="hljs-number">0x76</span>, <span class="hljs-number">0xfc</span>, <span class="hljs-number">0xc3</span>, <span class="hljs-number">0x7d</span>, <span class="hljs-number">0xee</span>, <span class="hljs-number">0xd4</span>, <span class="hljs-number">0x5e</span>, <span class="hljs-number">0x3c</span>, <span class="hljs-number">0x9c</span>, <span class="hljs-number">0x0e</span>, <span class="hljs-number">0xe7</span>, <span class="hljs-number">0xde</span>, <span class="hljs-number">0x88</span>, <span class="hljs-number">0x0d</span>, <span class="hljs-number">0x2f</span>, <span class="hljs-number">0x93</span>, <span class="hljs-number">0xe4</span>, <span class="hljs-number">0xb0</span>, <span class="hljs-number">0x42</span>, <span class="hljs-number">0xe9</span>, <span class="hljs-number">0x94</span>, <span class="hljs-number">0x10</span>, <span class="hljs-number">0x69</span>, <span class="hljs-number">0x3b</span>, <span class="hljs-number">0x4b</span>, <span class="hljs-number">0xb6</span>, <span class="hljs-number">0x06</span>, <span class="hljs-number">0x0d</span>, <span class="hljs-number">0x87</span>, <span class="hljs-number">0xd1</span>, <span class="hljs-number">0x74</span>, <span class="hljs-number">0x6e</span>, <span class="hljs-number">0x6c</span>, <span class="hljs-number">0xf4</span>, <span class="hljs-number">0x85</span>, <span class="hljs-number">0x6a</span>, <span class="hljs-number">0xf5</span>, <span class="hljs-number">0xa3</span>, <span class="hljs-number">0xac</span>, <span class="hljs-number">0x76</span>, <span class="hljs-number">0xe7</span>, <span class="hljs-number">0xb1</span>, <span class="hljs-number">0x86</span>, <span class="hljs-number">0xc3</span>, <span class="hljs-number">0xed</span>, <span class="hljs-number">0x69</span>, <span class="hljs-number">0x7a</span>, <span class="hljs-number">0x11</span>, <span class="hljs-number">0x71</span>, <span class="hljs-number">0x10</span>, <span class="hljs-number">0x26</span>, <span class="hljs-number">0xb9</span>, <span class="hljs-number">0xbc</span>, <span class="hljs-number">0x22</span>, <span class="hljs-number">0x71</span>, <span class="hljs-number">0x1e</span>, <span class="hljs-number">0x25</span>, <span class="hljs-number">0xb1</span>, <span class="hljs-number">0xc6</span>, <span class="hljs-number">0xec</span>, <span class="hljs-number">0xd4</span>, <span class="hljs-number">0xe0</span>, <span class="hljs-number">0x61</span>, <span class="hljs-number">0xa4</span>, <span class="hljs-number">0x7b</span>, <span class="hljs-number">0x26</span>, <span class="hljs-number">0x5a</span>, <span class="hljs-number">0xbf</span>, <span class="hljs-number">0x70</span>, <span class="hljs-number">0xbf</span>, <span class="hljs-number">0x62</span>, <span class="hljs-number">0x5e</span>, <span class="hljs-number">0xbf</span>, <span class="hljs-number">0x6f</span>, <span class="hljs-number">0xdc</span>, <span class="hljs-number">0x34</span>, <span class="hljs-number">0xdf</span>, <span class="hljs-number">0x89</span>, <span class="hljs-number">0x6a</span>, <span class="hljs-number">0x87</span>, <span class="hljs-number">0xf3</span>, <span class="hljs-number">0x6f</span>, <span class="hljs-number">0x37</span>, <span class="hljs-number">0x75</span>, <span class="hljs-number">0x2e</span>, <span class="hljs-number">0xa9</span>, <span class="hljs-number">0xa4</span>, <span class="hljs-number">0x67</span>, <span class="hljs-number">0xf6</span>, <span class="hljs-number">0x90</span>, <span class="hljs-number">0x97</span>, <span class="hljs-number">0xee</span>, <span class="hljs-number">0x36</span>, <span class="hljs-number">0xfb</span>, <span class="hljs-number">0x12</span>, <span class="hljs-number">0x5f</span>, <span class="hljs-number">0x23</span>, <span class="hljs-number">0xe7</span>, <span class="hljs-number">0x98</span>, <span class="hljs-number">0xa1</span>, <span class="hljs-number">0xf9</span>, <span class="hljs-number">0x4a</span>, <span class="hljs-number">0xe2</span>, <span class="hljs-number">0x48</span>, <span class="hljs-number">0xdc</span>, <span class="hljs-number">0xa1</span>, <span class="hljs-number">0x94</span>, <span class="hljs-number">0x6d</span>, <span class="hljs-number">0x81</span>, <span class="hljs-number">0x59</span>
+ };
+</code></pre></div></div>
+</li>
+<li><p>Repeat steps 2-4 above for the <code>secondaryContent</code> array. (Note in step 4 where you should change <code>originalSignature</code> to <code>secondarySignature</code>.)</p>
+</li>
+<li><p>Copy the resulting arrays (<code>originalSignature</code> and <code>secondarySignature</code>) to <code>secure_fs.c</code> above the thread function.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_38')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_38" class="lang-c hljs cpp"> _const <span class="hljs-keyword">char</span> originalContent[] = <span class="hljs-string">"This is the original content!"</span>;
+ _const <span class="hljs-keyword">char</span> originalSignature[] = {<span class="hljs-number">0x28</span>, <span class="hljs-number">0xfa</span>, <span class="hljs-number">0x72</span>, <span class="hljs-number">0xea</span>, <span class="hljs-number">0x9e</span>, <span class="hljs-number">0xfe</span>, <span class="hljs-number">0xd2</span>, <span class="hljs-number">0x8c</span>, <span class="hljs-number">0x00</span>, <span class="hljs-number">0x72</span>, <span class="hljs-number">0x04</span>, <span class="hljs-number">0xd4</span>, <span class="hljs-number">0x02</span>, <span class="hljs-number">0xfb</span>, <span class="hljs-number">0x35</span>, <span class="hljs-number">0x16</span>, <span class="hljs-number">0x31</span>, <span class="hljs-number">0xc9</span>, <span class="hljs-number">0x6d</span>, <span class="hljs-number">0xd8</span>, <span class="hljs-number">0x6d</span>, <span class="hljs-number">0xc5</span>, <span class="hljs-number">0x26</span>, <span class="hljs-number">0x8e</span>, <span class="hljs-number">0x75</span>, <span class="hljs-number">0xe4</span>, <span class="hljs-number">0x36</span>, <span class="hljs-number">0xb2</span>, <span class="hljs-number">0xf3</span>, <span class="hljs-number">0xdf</span>, <span class="hljs-number">0xac</span>, <span class="hljs-number">0x1d</span>, <span class="hljs-number">0x5a</span>, <span class="hljs-number">0x4f</span>, <span class="hljs-number">0x80</span>, <span class="hljs-number">0x46</span>, <span class="hljs-number">0xf4</span>, <span class="hljs-number">0x1e</span>, <span class="hljs-number">0x65</span>, <span class="hljs-number">0xda</span>, <span class="hljs-number">0xc0</span>, <span class="hljs-number">0x05</span>, <span class="hljs-number">0xbf</span>, <span class="hljs-number">0x29</span>, <span class="hljs-number">0xff</span>, <span class="hljs-number">0x79</span>, <span class="hljs-number">0x6d</span>, <span class="hljs-number">0x7d</span>, <span class="hljs-number">0xa4</span>, <span class="hljs-number">0x29</span>, <span class="hljs-number">0x79</span>, <span class="hljs-number">0x54</span>, <span class="hljs-number">0xd5</span>, <span class="hljs-number">0x76</span>, <span class="hljs-number">0x58</span>, <span class="hljs-number">0x57</span>, <span class="hljs-number">0x5f</span>, <span class="hljs-number">0xf4</span>, <span class="hljs-number">0xf9</span>, <span class="hljs-number">0x53</span>, <span class="hljs-number">0x7b</span>, <span class="hljs-number">0x48</span>, <span class="hljs-number">0x6b</span>, <span class="hljs-number">0x1c</span>, <span class="hljs-number">0x7c</span>, <span class="hljs-number">0xd9</span>, <span class="hljs-number">0xb1</span>, <span class="hljs-number">0x8e</span>, <span class="hljs-number">0xdf</span>, <span class="hljs-number">0x92</span>, <span class="hljs-number">0xc0</span>, <span class="hljs-number">0x4e</span>, <span class="hljs-number">0x86</span>, <span class="hljs-number">0x0e</span>, <span class="hljs-number">0x0a</span>, <span class="hljs-number">0xa9</span>, <span class="hljs-number">0x1c</span>, <span class="hljs-number">0x76</span>, <span class="hljs-number">0xf0</span>, <span class="hljs-number">0x53</span>, <span class="hljs-number">0xf1</span>, <span class="hljs-number">0xef</span>, <span class="hljs-number">0xd2</span>, <span class="hljs-number">0x4a</span>, <span class="hljs-number">0xb9</span>, <span class="hljs-number">0xc6</span>, <span class="hljs-number">0xea</span>, <span class="hljs-number">0xb1</span>, <span class="hljs-number">0xd8</span>, <span class="hljs-number">0x11</span>, <span class="hljs-number">0xdf</span>, <span class="hljs-number">0x33</span>, <span class="hljs-number">0x4d</span>, <span class="hljs-number">0x74</span>, <span class="hljs-number">0x1a</span>, <span class="hljs-number">0xbe</span>, <span class="hljs-number">0xb8</span>, <span class="hljs-number">0x68</span>, <span class="hljs-number">0xae</span>, <span class="hljs-number">0xee</span>, <span class="hljs-number">0x2d</span>, <span class="hljs-number">0x5a</span>, <span class="hljs-number">0xb3</span>, <span class="hljs-number">0xa5</span>, <span class="hljs-number">0x12</span>, <span class="hljs-number">0x56</span>, <span class="hljs-number">0x96</span>, <span class="hljs-number">0x44</span>, <span class="hljs-number">0x53</span>, <span class="hljs-number">0xea</span>, <span class="hljs-number">0x3d</span>, <span class="hljs-number">0xe8</span>, <span class="hljs-number">0x5b</span>, <span class="hljs-number">0xb8</span>, <span class="hljs-number">0x85</span>, <span class="hljs-number">0x75</span>, <span class="hljs-number">0x70</span>, <span class="hljs-number">0xb9</span>, <span class="hljs-number">0x34</span>, <span class="hljs-number">0x50</span>, <span class="hljs-number">0xb0</span>, <span class="hljs-number">0xa5</span>, <span class="hljs-number">0xaf</span>, <span class="hljs-number">0x6a</span>, <span class="hljs-number">0x8d</span>, <span class="hljs-number">0xde</span>, <span class="hljs-number">0x4e</span>, <span class="hljs-number">0xe0</span>, <span class="hljs-number">0x15</span>, <span class="hljs-number">0x37</span>, <span class="hljs-number">0x2d</span>, <span class="hljs-number">0xe0</span>, <span class="hljs-number">0x39</span>, <span class="hljs-number">0xd4</span>, <span class="hljs-number">0xfa</span>, <span class="hljs-number">0x13</span>, <span class="hljs-number">0x73</span>, <span class="hljs-number">0x3a</span>, <span class="hljs-number">0x21</span>, <span class="hljs-number">0x9d</span>, <span class="hljs-number">0x16</span>, <span class="hljs-number">0xaa</span>, <span class="hljs-number">0xf3</span>, <span class="hljs-number">0xb8</span>, <span class="hljs-number">0xf0</span>, <span class="hljs-number">0x9b</span>, <span class="hljs-number">0x76</span>, <span class="hljs-number">0xfc</span>, <span class="hljs-number">0xc3</span>, <span class="hljs-number">0x7d</span>, <span class="hljs-number">0xee</span>, <span class="hljs-number">0xd4</span>, <span class="hljs-number">0x5e</span>, <span class="hljs-number">0x3c</span>, <span class="hljs-number">0x9c</span>, <span class="hljs-number">0x0e</span>, <span class="hljs-number">0xe7</span>, <span class="hljs-number">0xde</span>, <span class="hljs-number">0x88</span>, <span class="hljs-number">0x0d</span>, <span class="hljs-number">0x2f</span>, <span class="hljs-number">0x93</span>, <span class="hljs-number">0xe4</span>, <span class="hljs-number">0xb0</span>, <span class="hljs-number">0x42</span>, <span class="hljs-number">0xe9</span>, <span class="hljs-number">0x94</span>, <span class="hljs-number">0x10</span>, <span class="hljs-number">0x69</span>, <span class="hljs-number">0x3b</span>, <span class="hljs-number">0x4b</span>, <span class="hljs-number">0xb6</span>, <span class="hljs-number">0x06</span>, <span class="hljs-number">0x0d</span>, <span class="hljs-number">0x87</span>, <span class="hljs-number">0xd1</span>, <span class="hljs-number">0x74</span>, <span class="hljs-number">0x6e</span>, <span class="hljs-number">0x6c</span>, <span class="hljs-number">0xf4</span>, <span class="hljs-number">0x85</span>, <span class="hljs-number">0x6a</span>, <span class="hljs-number">0xf5</span>, <span class="hljs-number">0xa3</span>, <span class="hljs-number">0xac</span>, <span class="hljs-number">0x76</span>, <span class="hljs-number">0xe7</span>, <span class="hljs-number">0xb1</span>, <span class="hljs-number">0x86</span>, <span class="hljs-number">0xc3</span>, <span class="hljs-number">0xed</span>, <span class="hljs-number">0x69</span>, <span class="hljs-number">0x7a</span>, <span class="hljs-number">0x11</span>, <span class="hljs-number">0x71</span>, <span class="hljs-number">0x10</span>, <span class="hljs-number">0x26</span>, <span class="hljs-number">0xb9</span>, <span class="hljs-number">0xbc</span>, <span class="hljs-number">0x22</span>, <span class="hljs-number">0x71</span>, <span class="hljs-number">0x1e</span>, <span class="hljs-number">0x25</span>, <span class="hljs-number">0xb1</span>, <span class="hljs-number">0xc6</span>, <span class="hljs-number">0xec</span>, <span class="hljs-number">0xd4</span>, <span class="hljs-number">0xe0</span>, <span class="hljs-number">0x61</span>, <span class="hljs-number">0xa4</span>, <span class="hljs-number">0x7b</span>, <span class="hljs-number">0x26</span>, <span class="hljs-number">0x5a</span>, <span class="hljs-number">0xbf</span>, <span class="hljs-number">0x70</span>, <span class="hljs-number">0xbf</span>, <span class="hljs-number">0x62</span>, <span class="hljs-number">0x5e</span>, <span class="hljs-number">0xbf</span>, <span class="hljs-number">0x6f</span>, <span class="hljs-number">0xdc</span>, <span class="hljs-number">0x34</span>, <span class="hljs-number">0xdf</span>, <span class="hljs-number">0x89</span>, <span class="hljs-number">0x6a</span>, <span class="hljs-number">0x87</span>, <span class="hljs-number">0xf3</span>, <span class="hljs-number">0x6f</span>, <span class="hljs-number">0x37</span>, <span class="hljs-number">0x75</span>, <span class="hljs-number">0x2e</span>, <span class="hljs-number">0xa9</span>, <span class="hljs-number">0xa4</span>, <span class="hljs-number">0x67</span>, <span class="hljs-number">0xf6</span>, <span class="hljs-number">0x90</span>, <span class="hljs-number">0x97</span>, <span class="hljs-number">0xee</span>, <span class="hljs-number">0x36</span>, <span class="hljs-number">0xfb</span>, <span class="hljs-number">0x12</span>, <span class="hljs-number">0x5f</span>, <span class="hljs-number">0x23</span>, <span class="hljs-number">0xe7</span>, <span class="hljs-number">0x98</span>, <span class="hljs-number">0xa1</span>, <span class="hljs-number">0xf9</span>, <span class="hljs-number">0x4a</span>, <span class="hljs-number">0xe2</span>, <span class="hljs-number">0x48</span>, <span class="hljs-number">0xdc</span>, <span class="hljs-number">0xa1</span>, <span class="hljs-number">0x94</span>, <span class="hljs-number">0x6d</span>, <span class="hljs-number">0x81</span>, <span class="hljs-number">0x59</span>};
+ _const <span class="hljs-keyword">char</span> secondaryContent[] = <span class="hljs-string">"Overridden by the secondary content..."</span>;
+ _const <span class="hljs-keyword">char</span> secondarySignature[] = {<span class="hljs-number">0xb4</span>, <span class="hljs-number">0x89</span>, <span class="hljs-number">0x06</span>, <span class="hljs-number">0xbc</span>, <span class="hljs-number">0x62</span>, <span class="hljs-number">0x8a</span>, <span class="hljs-number">0x68</span>, <span class="hljs-number">0x83</span>, <span class="hljs-number">0x04</span>, <span class="hljs-number">0xd4</span>, <span class="hljs-number">0x60</span>, <span class="hljs-number">0x08</span>, <span class="hljs-number">0xd6</span>, <span class="hljs-number">0xe4</span>, <span class="hljs-number">0xe7</span>, <span class="hljs-number">0x88</span>, <span class="hljs-number">0x81</span>, <span class="hljs-number">0xb6</span>, <span class="hljs-number">0xa0</span>, <span class="hljs-number">0xdc</span>, <span class="hljs-number">0x6c</span>, <span class="hljs-number">0x27</span>, <span class="hljs-number">0xc1</span>, <span class="hljs-number">0x40</span>, <span class="hljs-number">0x4f</span>, <span class="hljs-number">0x1f</span>, <span class="hljs-number">0xfd</span>, <span class="hljs-number">0x1a</span>, <span class="hljs-number">0xf4</span>, <span class="hljs-number">0xfd</span>, <span class="hljs-number">0x53</span>, <span class="hljs-number">0xb6</span>, <span class="hljs-number">0xfc</span>, <span class="hljs-number">0xd3</span>, <span class="hljs-number">0x0e</span>, <span class="hljs-number">0x6a</span>, <span class="hljs-number">0xfc</span>, <span class="hljs-number">0xb9</span>, <span class="hljs-number">0x0b</span>, <span class="hljs-number">0xe9</span>, <span class="hljs-number">0xa6</span>, <span class="hljs-number">0x54</span>, <span class="hljs-number">0x9b</span>, <span class="hljs-number">0xa5</span>, <span class="hljs-number">0x64</span>, <span class="hljs-number">0x36</span>, <span class="hljs-number">0xd6</span>, <span class="hljs-number">0x4d</span>, <span class="hljs-number">0x10</span>, <span class="hljs-number">0x32</span>, <span class="hljs-number">0x7d</span>, <span class="hljs-number">0x2f</span>, <span class="hljs-number">0x88</span>, <span class="hljs-number">0x70</span>, <span class="hljs-number">0x20</span>, <span class="hljs-number">0x16</span>, <span class="hljs-number">0x7e</span>, <span class="hljs-number">0x1c</span>, <span class="hljs-number">0xba</span>, <span class="hljs-number">0x6f</span>, <span class="hljs-number">0x4f</span>, <span class="hljs-number">0x4d</span>, <span class="hljs-number">0x05</span>, <span class="hljs-number">0xa0</span>, <span class="hljs-number">0x1b</span>, <span class="hljs-number">0xfb</span>, <span class="hljs-number">0x15</span>, <span class="hljs-number">0x11</span>, <span class="hljs-number">0x30</span>, <span class="hljs-number">0x8c</span>, <span class="hljs-number">0x45</span>, <span class="hljs-number">0x3c</span>, <span class="hljs-number">0xab</span>, <span class="hljs-number">0x5b</span>, <span class="hljs-number">0x9e</span>, <span class="hljs-number">0x4f</span>, <span class="hljs-number">0x8d</span>, <span class="hljs-number">0x6b</span>, <span class="hljs-number">0x9a</span>, <span class="hljs-number">0x19</span>, <span class="hljs-number">0xaf</span>, <span class="hljs-number">0x5d</span>, <span class="hljs-number">0x6f</span>, <span class="hljs-number">0x71</span>, <span class="hljs-number">0x47</span>, <span class="hljs-number">0x75</span>, <span class="hljs-number">0x3c</span>, <span class="hljs-number">0x62</span>, <span class="hljs-number">0x67</span>, <span class="hljs-number">0x51</span>, <span class="hljs-number">0xe9</span>, <span class="hljs-number">0xbf</span>, <span class="hljs-number">0xc4</span>, <span class="hljs-number">0x12</span>, <span class="hljs-number">0x6a</span>, <span class="hljs-number">0xb6</span>, <span class="hljs-number">0x30</span>, <span class="hljs-number">0xf3</span>, <span class="hljs-number">0xb4</span>, <span class="hljs-number">0x6b</span>, <span class="hljs-number">0x46</span>, <span class="hljs-number">0xb6</span>, <span class="hljs-number">0xa8</span>, <span class="hljs-number">0x79</span>, <span class="hljs-number">0x6f</span>, <span class="hljs-number">0xcf</span>, <span class="hljs-number">0x3a</span>, <span class="hljs-number">0x33</span>, <span class="hljs-number">0x3d</span>, <span class="hljs-number">0x36</span>, <span class="hljs-number">0x9a</span>, <span class="hljs-number">0x98</span>, <span class="hljs-number">0x73</span>, <span class="hljs-number">0x43</span>, <span class="hljs-number">0x5f</span>, <span class="hljs-number">0x16</span>, <span class="hljs-number">0x2d</span>, <span class="hljs-number">0x89</span>, <span class="hljs-number">0xfe</span>, <span class="hljs-number">0x5b</span>, <span class="hljs-number">0xbb</span>, <span class="hljs-number">0x5f</span>, <span class="hljs-number">0x80</span>, <span class="hljs-number">0x5c</span>, <span class="hljs-number">0x06</span>, <span class="hljs-number">0x53</span>, <span class="hljs-number">0xda</span>, <span class="hljs-number">0xa5</span>, <span class="hljs-number">0x04</span>, <span class="hljs-number">0x0e</span>, <span class="hljs-number">0x89</span>, <span class="hljs-number">0xb5</span>, <span class="hljs-number">0x85</span>, <span class="hljs-number">0x46</span>, <span class="hljs-number">0xd8</span>, <span class="hljs-number">0x15</span>, <span class="hljs-number">0x97</span>, <span class="hljs-number">0xef</span>, <span class="hljs-number">0xa0</span>, <span class="hljs-number">0x31</span>, <span class="hljs-number">0x5c</span>, <span class="hljs-number">0x67</span>, <span class="hljs-number">0x85</span>, <span class="hljs-number">0x8c</span>, <span class="hljs-number">0x61</span>, <span class="hljs-number">0x45</span>, <span class="hljs-number">0xf6</span>, <span class="hljs-number">0x07</span>, <span class="hljs-number">0x11</span>, <span class="hljs-number">0x56</span>, <span class="hljs-number">0xd0</span>, <span class="hljs-number">0xfc</span>, <span class="hljs-number">0xd4</span>, <span class="hljs-number">0x10</span>, <span class="hljs-number">0x07</span>, <span class="hljs-number">0xb5</span>, <span class="hljs-number">0x28</span>, <span class="hljs-number">0xc0</span>, <span class="hljs-number">0x9d</span>, <span class="hljs-number">0x10</span>, <span class="hljs-number">0xfc</span>, <span class="hljs-number">0xff</span>, <span class="hljs-number">0xf9</span>, <span class="hljs-number">0x33</span>, <span class="hljs-number">0xed</span>, <span class="hljs-number">0xb7</span>, <span class="hljs-number">0xc4</span>, <span class="hljs-number">0xf0</span>, <span class="hljs-number">0xc1</span>, <span class="hljs-number">0xef</span>, <span class="hljs-number">0x47</span>, <span class="hljs-number">0x36</span>, <span class="hljs-number">0x49</span>, <span class="hljs-number">0xd1</span>, <span class="hljs-number">0x7d</span>, <span class="hljs-number">0xc0</span>, <span class="hljs-number">0x5f</span>, <span class="hljs-number">0x67</span>, <span class="hljs-number">0xd7</span>, <span class="hljs-number">0xf1</span>, <span class="hljs-number">0x34</span>, <span class="hljs-number">0xa3</span>, <span class="hljs-number">0x22</span>, <span class="hljs-number">0x16</span>, <span class="hljs-number">0x66</span>, <span class="hljs-number">0x88</span>, <span class="hljs-number">0x46</span>, <span class="hljs-number">0x24</span>, <span class="hljs-number">0x9d</span>, <span class="hljs-number">0x35</span>, <span class="hljs-number">0xdb</span>, <span class="hljs-number">0xb3</span>, <span class="hljs-number">0xbd</span>, <span class="hljs-number">0x38</span>, <span class="hljs-number">0xe6</span>, <span class="hljs-number">0x27</span>, <span class="hljs-number">0x04</span>, <span class="hljs-number">0xaf</span>, <span class="hljs-number">0x31</span>, <span class="hljs-number">0xda</span>, <span class="hljs-number">0x4d</span>, <span class="hljs-number">0xdf</span>, <span class="hljs-number">0x7e</span>, <span class="hljs-number">0x5e</span>, <span class="hljs-number">0xda</span>, <span class="hljs-number">0x6f</span>, <span class="hljs-number">0x55</span>, <span class="hljs-number">0x6c</span>, <span class="hljs-number">0x5e</span>, <span class="hljs-number">0xe4</span>, <span class="hljs-number">0x61</span>, <span class="hljs-number">0x23</span>, <span class="hljs-number">0x62</span>, <span class="hljs-number">0xf9</span>, <span class="hljs-number">0x54</span>, <span class="hljs-number">0x9e</span>, <span class="hljs-number">0xfd</span>, <span class="hljs-number">0x4c</span>, <span class="hljs-number">0xd0</span>, <span class="hljs-number">0x5b</span>, <span class="hljs-number">0xbc</span>, <span class="hljs-number">0x62</span>, <span class="hljs-number">0x55</span>, <span class="hljs-number">0xb1</span>, <span class="hljs-number">0x6a</span>, <span class="hljs-number">0xbc</span>, <span class="hljs-number">0x3c</span>, <span class="hljs-number">0x11</span>, <span class="hljs-number">0x53</span>, <span class="hljs-number">0xda</span>, <span class="hljs-number">0x4d</span>, <span class="hljs-number">0x7d</span>, <span class="hljs-number">0xc5</span>, <span class="hljs-number">0xad</span>, <span class="hljs-number">0xad</span>, <span class="hljs-number">0x10</span>, <span class="hljs-number">0x52</span>, <span class="hljs-number">0xf2</span>, <span class="hljs-number">0x2b</span>, <span class="hljs-number">0x4f</span>, <span class="hljs-number">0xba</span>, <span class="hljs-number">0xd2</span>, <span class="hljs-number">0x1c</span>, <span class="hljs-number">0xe1</span>, <span class="hljs-number">0xec</span>, <span class="hljs-number">0x33</span>, <span class="hljs-number">0x51</span>, <span class="hljs-number">0xdf</span>, <span class="hljs-number">0x32</span>, <span class="hljs-number">0x3a</span>, <span class="hljs-number">0x12</span>, <span class="hljs-number">0x3d</span>, <span class="hljs-number">0xbf</span>, <span class="hljs-number">0x48</span>, <span class="hljs-number">0x35</span>, <span class="hljs-number">0x84</span>};
+</code></pre><span class="code-title"><p><strong>secure_fs.c</strong></p>
+</span></div></div>
+</li>
+<li><p>The signature is authenticated when a file (opened for write) is closed. Add the signature with the certificate file to <code>sl_FsClose()</code> calls:</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_39')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_39" class="lang-c hljs cpp">RetVal = sl_FsClose(fd, TEST_CERTIFICATE, (<span class="hljs-keyword">const</span> <span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">char</span> *)originalSignature, <span class="hljs-keyword">sizeof</span>(originalSignature));
+</code></pre><span class="code-title"><p><strong>secure_fs :: secureFSExampleThread()</strong></p>
+</span></div></div>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_40')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_40" class="lang-c hljs cpp">RetVal = sl_FsClose(fd, TEST_CERTIFICATE, (<span class="hljs-keyword">const</span> <span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">char</span> *)secondarySignature, <span class="hljs-built_in">strlen</span>(secondarySignature));
+</code></pre><span class="code-title"><p><strong>secure_fs :: secureFSExampleThread()</strong></p>
+</span></div></div>
+</li>
+<li><p>Compile and run the example.</p>
+</li>
+</ol>
+<h1 id="further-reading">Further Reading</h1>
+<p>For more information and implmentation options, see the following resources:</p>
+<ul>
+<li><a href="http://www.ti.com/lit/swru455">CC3x20 Programmer's Guide</a>: This guide contains information on how to use the SimpleLink API for writing WLAN-enabled applications. Please refer to chapter 8 (Secure File System) for further details on this lab's topic.</li>
+<li><a href="http://www.ti.com/lit/swru469">UniFlash ImageCreator User's Guide</a>: This imaging tool manually stores files on the external serial flash. Image may include the SimpleLink firmware patch file and any configuration files, security certificates, web pages, etc.</li>
+</ul>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Technical support
+</span></h4>
+<p>For any questions you might have, please search on the <a href="https://e2e.ti.com/">TI SimpleLink Wi-Fi E2E Forum</a></p>
+</div>
+</div><div class="col-xs-4 col-sm-2 sidebar-offcanvas bs-docs-sidebar hidden-print" id="sidebar-overview"><ul class="nav nav-stacked fixed" id="sidebar"><li><a href="#introduction">Introduction</a><ul class="nav nav-stacked"><li><a href="#vulnerabilities-of-iot-devices">Vulnerabilities of IoT Devices</a></li><li><a href="#simplelink-security-features">SimpleLink Security Features</a></li></ul></li><li><a href="#prerequisites">Prerequisites</a><ul class="nav nav-stacked"><li><a href="#software">Software</a></li><li><a href="#hardware">Hardware</a></li></ul></li><li><a href="#file-system-overview">File System Overview</a><ul class="nav nav-stacked"><li><a href="#file-system-funcionality">File System Funcionality</a><ul class="nav nav-stacked"><li><a href="#encryption">Encryption</a></li><li><a href="#cloning-protection">Cloning Protection</a></li><li><a href="#integrity-verification">Integrity Verification</a></li><li><a href="#access-control">Access Control</a></li><li><a href="#origin-authenticity">Origin Authenticity</a></li><li><a href="#recovery-mechanism">Recovery Mechanism</a></li><li><a href="#system-alerts">System Alerts</a></li></ul></li><li><a href="#levels-of-file-protection">Levels of File Protection</a></li><li><a href="#secure-file-system-api">Secure File System API</a></li></ul></li><li><a href="#task-1-preparing-the-environment">Task 1: Preparing the Environment</a><ul class="nav nav-stacked"><li><a href="#modifying-the-portable-example">Modifying the Portable Example</a></li><li><a href="#enabling-simplelink-wi-fi">Enabling SimpleLink Wi-Fi</a></li></ul></li><li><a href="#task-2-retrieving-file-system-information">Task 2: Retrieving file system information</a></li><li><a href="#task-3-demonstrating-the-fail-safe-recovery-mechanism">Task 3: Demonstrating the Fail-Safe (Recovery) mechanism</a></li><li><a href="#task-4-using-tokens-to-control-file-access-">Task 4: Using tokens to control file access  </a></li><li><a href="#task-5-using-certificates-to-verify-authenticity-and-integrity">Task 5: Using certificates to verify authenticity and integrity</a></li><li><a href="#further-reading">Further Reading</a></li></ul></div></div></div></div>
+
+<div align="center" style="margin-top: 4em;">
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="../../web_support/cc_license_icon.png"></a><br>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.</div>
+
+<link rel="stylesheet" href="../../web_support/highlight/styles/zenburn.css">
+<script src="../../web_support/strapdown/vendor/jquery-1.11.2.min.js"></script>
+<script src="../../web_support/strapdown/vendor/bootstrap.min.js"></script>
+<script src="../../web_support/highlight/highlight.pack.js"></script>
+<script type="text/javascript">document.isPreRendered = true;</script><script src="../../web_support/strapdown/v/0.2/strapdown.js"></script>      <div class="modal" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">        <div class="vertical-alignment-helper">          <div class="modal-dialog vertical-align-center">             <div class="modal-dialog">               <div class="modal-content" style="margin-left: auto;margin-right: auto;">                 <div class="modal-body">                   <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>                   <img src="" class="imagepreview img-responsive">                 </div>              </div>            </div>          </div>        </div>      </div>
+
+
+</body></html>

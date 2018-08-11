@@ -1,0 +1,116 @@
+[
+    {
+        "name": "TI-RTOS",
+        "description": "Learn about TI-RTOS functionality, its scheduler, thread synchronization, debugging facilities.",
+        "categories": ["Labs"],
+        "resourceType": "categoryInfo"
+    },
+    {
+        "name": "Bluetooth 4.2",
+        "description": "Labs related to using the Bluetooth Low Energy stack (BLE-Stack). We recommend starting with the \"Fundamentals\" lab for a jump directly into Bluetooth&reg; low energy and then progressing down the list of labs. If you are unfamiliar with the TI SDKs you might want to read through the lecture on RTOS Concepts and do a TI-RTOS lab first.",
+        "categories": ["Labs"],
+        "resourceType": "categoryInfo"
+    },
+    {
+        "name": "Bluetooth 5",
+        "description": "Labs related to using Bluetooth 5 and the BLE5-Stack. We recommend starting with the \"Fundamentals\" lab for a jump directly into Bluetooth&reg; low energy and then progressing down the list of labs. If you are unfamiliar with the TI SDKs you might want to read through the lecture on RTOS Concepts and do a TI-RTOS lab first.",
+        "categories": ["Labs"],
+        "resourceType": "categoryInfo"
+    },
+    {
+        "name": "POSIX",
+        "description": "Learn about the POSIX API provided in the SimpleLink SDKs, how to use it and how it relates to the underlying operating system. See also the RTOS Concepts lecture.",
+        "categories": ["Labs"],
+        "resourceType": "categoryInfo"
+    },
+    {
+        "name": "TI Drivers",
+        "description": "Learn how to use the TI-provided peripheral drivers in your product.",
+        "categories": ["Labs"],
+        "resourceType": "categoryInfo"
+    },
+    {
+        "name": "Sensor Controller Studio",
+        "description": "Learn how to develop, test, and debug code for the Sensor Controller on CC13xx and CC26xx devices using Sensor Controller Studio.",
+        "categories": ["Labs"],
+        "resourceType": "categoryInfo"
+    },
+    {
+        "name": "Connectivity",
+        "description": "Learn how you can use SDK Plugins to enable connectivity in your product.",
+        "categories": ["Labs"],
+        "resourceType": "categoryInfo"
+    },
+    {
+        "name": "FreeRTOS",
+        "description": "Learn how to integrate and use FreeRTOS with the SimpleLink MCU SDK ecosystem.",
+        "categories": ["Labs"],
+        "resourceType": "categoryInfo"
+    },
+    {
+        "name": "Proprietary RF",
+        "description": "These labs are related to developing proprietary RF protocols and applications using the CC13xx and CC26xx devices. We recommend starting with the \"Basic RX and TX\" lab to understand the basics first. If you are unfamiliar with the TI SDKs you might want to read through the lecture on RTOS Concepts and do a TI-RTOS lab first.",
+        "categories": ["Labs"],
+        "resourceType": "categoryInfo"
+    },
+    {
+        "name": "TI 15.4-Stack",
+        "description": "These labs are related to developing applications that are using the TI 15.4-Stack. The recommendation is to start with the \"Sensor and Collector - TI 15.4-Stack Project Zero\" lab. If you are unfamiliar with the TI SDKs you might want to read through the lecture on RTOS Concepts and do a TI-RTOS lab first.",
+        "categories": ["Labs"],
+        "resourceType": "categoryInfo"
+    },
+    {
+        "name": "Zigbee",
+        "description": "Here's stuff about Zigbee",
+        "categories": ["Labs"],
+        "resourceType": "categoryInfo"
+    },
+    {
+        "name": "OpenThread",
+        "description": "Here is stuff about OpenThread",
+        "categories": ["Labs"],
+        "resourceType": "categoryInfo"
+    },
+	{
+        "name": "Wi-Fi",
+        "description": "These labs are related to developing applications that are using SimpleLink Wi-Fi on CC3220 devices. If you are unfamiliar with the TI SDKs, you may want to read through the lecture on RTOS Concepts and do a TI-RTOS lab first.",
+        "categories": ["Labs"],
+        "resourceType": "categoryInfo"
+    },
+	{
+        "name": "Wi-Fi Plugin",
+        "description": "These labs are related to developing applications that are using SimpleLink Wi-Fi on CC3120 devices. If you are unfamiliar with the TI SDKs, you may want to begin with the MSP432 RTOS lectures and labs.",
+        "categories": ["Labs"],
+        "resourceType": "categoryInfo"
+    },
+	{
+        "name": "Wi-Fi Plugin",
+        "description": "These labs are related to developing applications that are using SimpleLink Wi-Fi on CC3120 devices. If you are unfamiliar with the TI SDKs, you may want to read through the lecture on RTOS Concepts and do a TI-RTOS lab first.",
+        "categories": ["Labs", "Connectivity"],
+        "resourceType": "categoryInfo"
+    },
+	{
+        "name": "Bluetooth LE Plugin",
+        "description": "These labs are related to using the Bluetooth Low Energy stack. If you are unfamiliar with the TI SDKs, you might want to read through the lecture on RTOS Concepts and do a TI-RTOS lab first.",
+        "categories": ["Labs", "Connectivity"],
+        "resourceType": "categoryInfo"
+    },
+    {
+        "name": "LaunchPad Out-Of-Box",
+        "description": "These labs are related to the LaunchPad out-of-box demos that are available in the SimpleLink SDK",
+        "categories": ["Labs", "LaunchPad Out-Of-Box"],
+        "resourceType": "categoryInfo"
+    },
+    {
+        "name": "Boot Loaders",
+        "description": "These labs are related to various bootloaders available on SimpleLink devices",
+        "categories": ["Labs", "Boot Loaders"],
+        "resourceType": "categoryInfo"
+    },
+    {
+        "name": "Peripheral Labs",
+        "description": "These labs are related to various specific peripherals available on SimpleLink devices",
+        "categories": ["Labs", "Peripheral Labs"],
+        "resourceType": "categoryInfo"
+    }
+]

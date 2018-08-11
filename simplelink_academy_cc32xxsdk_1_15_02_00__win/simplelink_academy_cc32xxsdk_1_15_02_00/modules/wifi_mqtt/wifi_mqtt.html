@@ -1,0 +1,363 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>Wi-Fi MQTT</title>
+<link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/ubuntu-regular-woff.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/glyphicons-halflings-regular.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/united2.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/bootstrap-responsive.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/strapdown.css"><link rel="shortcut icon" type="image/x-icon" href="../../.metadata/favicon.ico"></head>
+
+<!-- START PRE -->
+
+
+
+
+
+
+<!-- END PRE -->
+
+<body style=""><div class="container"><nav class="navbar navbar-default navbar-static-top"><div class="container-fluid"> <div class="navbar-header">  <div id="headline" class="navbar-brand">Wi-Fi MQTT</div> </div> </div></nav><div class="container"><div class="row row-offcanvas row-offcanvas-left"><div class="col-xs-12 col-sm-9" id="content"><h1 id="introduction">Introduction</h1>
+<p>This workshop shows how to use the SimpleLink™ Wi-Fi® MQTT library, which enables you to connect as a MQTT Client to a cloud MQTT broker and/or create a local MQTT broker that can serve as a gateway for local MQTT clients.</p>
+<p>This workshop will walk you through an overview of the MQTT protocol and then walk through the bring up of two MQTT demos:</p>
+<ol>
+<li>MQTT Client Example</li>
+<li>MQTT Client-Server Example</li>
+</ol>
+<h1 id="prerequisites">Prerequisites</h1>
+<h2 id="software">Software</h2>
+<ul>
+<li><a href="http://www.ti.com/tool/ccstudio">Code Composer Studio</a> v7.4 or later<ul>
+<li>Must have SimpleLink CC3xxx Wireless support</li>
+<li>Make sure that CCS is using the <strong>latest updates</strong>: <em>Help</em> → <em>Check for Updates</em></li>
+</ul>
+</li>
+<li><a href="http://www.ti.com/tool/simplelink-cc3220-sdk">CC3220 SDK v1.60.00.04</a> or later</li>
+<li><a href="http://www.ti.com/tool/UNIFLASH">UniFlash</a> v4.2.1.15 or later.</li>
+<li>Terminal emulator program such as TeraTerm or PuTTY</li>
+</ul>
+<h2 id="hardware">Hardware</h2>
+<ul>
+<li>2x CC3220S or CC3220SF LaunchPad™ (<a href="http://www.ti.com/tool/cc3220s-launchxl">CC3220S-LAUNCHXL</a> or <a href="http://www.ti.com/tool/cc3220sf-launchxl">CC3220SF-LAUNCHXL</a>)</li>
+<li>2x Micro-USB cable (included with LaunchPad/BoosterPack)</li>
+<li>802.11b/g/n (2.4-GHz) Wireless Access Point (AP)</li>
+<li>Smartphone/laptop with any MQTT client app (e.g. MyMQTT for Android, ICPDAS MQTT for iOS, or HiveMQ MQTT Websocket Client for browser)</li>
+</ul>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Note
+</span></h4>
+<p>The MQTT Client-Server exercise in this lab requires two CC3220 LaunchPads. The MQTT Client exercise can be completed with one LaunchPad.</p>
+</div>
+<h1 id="mqtt-overview">MQTT Overview</h1>
+<h2 id="mqtt-protocol">MQTT Protocol</h2>
+<p>MQTT (Message Queue Telemetry Transport) protocol is a light-weight machine-to-machine connectivity protocol. It is based on a publish/subscribe messaging model and is designed to be used on the top of TCP/IP protocol. Key benefits of this protocol include small code footprint and a low network bandwidth requirement. Other features include faster response time, low power requirement, and ease of scalability. All of these advantages make it an ideal candidate for a communication protocol in embedded devices intended to implement IOT (Internet of Things) applications.</p>
+<p>A Simple MQTT infrastructure contains a broker (like a central hub) connected to multiple clients, each of which has the capability of publishing on any topic (token). The broker has the responsibility of sending the message published on any topic to all the subscribers of that topic. A typical MQTT network has many more features and configuration parameters.</p>
+<h2 id="simplelink-mqtt-library">SimpleLink MQTT Library</h2>
+<p>The MQTT library abstracts the underlying intricacies of a MQTT network and provides the user application with an intuitive and easy to use API to implement the MQTT protocol on the CC3220 device. Separate modules and APIs are used for the MQTT Server and the MQTT Client functionality.</p>
+<p>The Client API includes the following:</p>
+<ul>
+<li>Create (or delete) a client instance</li>
+<li>Connect to an MQTT server (based on URL or IP Address)</li>
+<li>Subscribe (or unsubscribe) to a topic</li>
+<li>Publish a topic and a message</li>
+<li>Run the client main task loop<br></li>
+</ul>
+<p>The Server has a similar interface excluding the <code>Connect</code> command. The source for the MQTT library can be found under <code>simplelink_cc32xx_sdk_x_xx_xx_xx\source\ti\net\mqtt</code></p>
+<h1 id="mqtt-client-demo">MQTT Client Demo</h1>
+<p>This application uses the MQTT Client API to communicate with an Eclipse M2M broker. Three LEDs on the Launchpad can be controlled from a remote MQTT client by publishing messages on appropriate topics. Similarly, a message can be published on pre-configured topics (defined in the code) by pressing a button on the host platform.
+    </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/clientdemo.png" alt="Client Demo" class="img-responsive"></div><p></p>
+<h2 id="task-1-preparing-the-mqtt-client-application">Task 1: Preparing the MQTT Client application</h2>
+<ol>
+<li><p>In CCS, import the <code>mqtt_client_CC3220SF_LAUNCHXL_tirtos_ccs</code> example (<code>simplelink_cc32xx_sdk_x_xx_xx_xx/examples/rtos/CC3220SF_LAUNCHXL/demos/mqtt_client/tirtos/ccs</code>).</p>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">CC3220S LaunchPad
+</span></h4>
+<p> If you are using a CC3220S LaunchPad, assume all given folder and code instructions can be changed from <code>CC3220SF</code> to <code>CC3220S</code>. For example, here you should import the <code>mqtt_client_CC3220S_LAUNCHXL_tirtos_ccs</code> example from <code>simplelink_cc32xx_sdk_x_xx_xx_xx/examples/rtos/CC3220S_LAUNCHXL/demos/mqtt_client/tirtos/ccs</code>.</p>
+</div>
+</li>
+<li><p>Set the local access point parameters (<code>SSID_NAME</code>, <code>SECURITY_TYPE</code> and <code>SECURITY_KEY</code>) defined in <code>network_if.h</code> so they are configured according to your local access point.
+ </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/clientdemo-gensetting.png" alt="General Settings" class="img-responsive"></div><p></p>
+</li>
+<li><p>Take a look at your MQTT settings. They can be found in the macros at the beginning of<code>mqtt_client_app.c</code>. The important ones are:</p>
+<ul>
+<li><code>SERVER_ADDRESS</code></li>
+<li><code>PORT_NUMBER</code></li>
+<li>Subscription topics:<ul>
+<li><code>SUBSCRIPTION_TOPIC0</code></li>
+<li><code>SUBSCRIPTION_TOPIC1</code></li>
+<li>etc.
+<div class="modal-pop" style="cursor:zoom-in;"><img src="resources/clientdemo-mqttsetting-1.png" alt="" class="img-responsive"></div></li>
+</ul>
+</li>
+<li><code>ClientId</code> (must be unique)
+  <div class="modal-pop" style="cursor:zoom-in;"><img src="resources/clientdemo-mqttsetting-4.png" alt="" class="img-responsive"></div></li>
+<li>If <code>ClientId</code> is not specified, it is by default set to the local MAC Address in <code>SetClientIdNamefromMacAddress()</code>
+  <div class="modal-pop" style="cursor:zoom-in;"><img src="resources/clientdemo-mqttsetting-3.png" alt="" class="img-responsive"></div></li>
+<li>Publishing topics:<ul>
+<li><code>publish_topic</code></li>
+<li><code>publish_data</code>
+<div class="modal-pop" style="cursor:zoom-in;"><img src="resources/clientdemo-mqttsetting-2.png" alt="" class="img-responsive"></div></li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p>In this example, the client subscribes to 4 topics and publishes to 1 topic.</p>
+<h2 id="task-2-setting-up-the-mqtt-client-demo">Task 2: Setting up the MQTT Client demo</h2>
+<ol>
+<li><p>Open the UniFlash tool and add the entire "dummy" certificate chain as user files. This is shown in detail in <strong>section 2.4</strong> and steps 1-4 of <strong>section 2.4.1</strong> of the <a href="http://www.ti.com/lit/swru461">SimpleLink Wi-Fi CC3220 Getting Started Guide</a>.</p>
+</li>
+<li><p>Flash (with the UniFlash tool) and reset the LaunchPad to start the application, or start a CCS Debug session to load and run the application.</p>
+</li>
+<li><p>Open a terminal emulation program such as TeraTerm and select the XDS110 Class Application/User UART port.</p>
+<div class="alert alert-warning "><p> <strong>UART Configuration</strong><br>
+ Baud rate: 115200<br>
+ Data: 8 bit<br>
+ Parity: None<br>
+ Stop: 1 bit<br>
+ Flow control: None</p>
+</div>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/terminal-clientapp.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>On a mobile device, use the installed MQTT client (see prerequisite) to connect to the MQTT broker used by the CC3220: <strong>m2m.eclipse.org</strong></p>
+<ul>
+<li>Verify that the port is 1883 and select a unique Client ID.</li>
+<li>Leave all other settings as default, and <strong>Connect</strong>.
+  <div class="modal-pop" style="cursor:zoom-in;"><img src="resources/mymqtt-1.png" alt="" class="img-responsive"></div></li>
+</ul>
+</li>
+</ol>
+<h2 id="task-3-running-the-mqtt-client-application">Task 3: Running the MQTT Client application</h2>
+<ol>
+<li><p>Send a message from the Eclipse M2M client to the SimpleLink device by publishing the <code>/cc3200/ToggleLEDCmdL&lt;x&gt;</code> topic (the <code>x</code> should be between 1 and 3). You should see the corresponding LED toggle on the MCU device.</p>
+</li>
+<li><p>Use <code>/Broker/To/cc32xx</code> topic to send a text message that will be printed on the console.
+ </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/clientdemo-app1.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>Using the MQTT client app, subscribe to the topic published by the SimpleLink client (<code>/cc32xx/ButtonPressEvtSw2</code>).</p>
+</li>
+<li><p>Send a message from the SimpleLink device to the Eclipse client by pressing the button on the right side of the Launchpad (or the corresponding button in your setup).
+ </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/clientdemo-app2.png" alt="" class="img-responsive"></div><p></p>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Buttons on the LaunchPad
+</span></h4>
+<p>     If you have a Rev A CC3220 LaunchPad, you will want to use the SW3 button. If you have a Rev B, you will want to use the SW2 button. For more information on LaunchPad revisions, refer to the <a href="http://www.ti.com/lit/swru463">CC3220 LaunchPad Development Kit Hardware User's Guide</a>.</p>
+</div>
+</li>
+</ol>
+<h1 id="mqtt-client-server-demo">MQTT Client-Server Demo</h1>
+<p>In this example, the SimpleLink Wi-Fi device is running a MQTT server (“local broker”) which allows local MQTT clients to communicate with each other. Simultaneously, it is also running a client which is connected to a cloud broker. This operation mode is also called “bridge mode.” The interface between the on-board client and the server is such that the local clients can also communicate with the remote MQTT clients, which are connected to the same cloud broker as the on-board client.
+    </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/serverdemo.png" alt="Server Demo" class="img-responsive"></div><p></p>
+<p>MQTT allows remote control of an IOT device through a cloud-based broker. Every transaction through the external broker has a fee. The Client-Server demo demonstrates a solution for the local network that will eliminate the need for cloud broker access.</p>
+<p>Within the local (home) network,  the controlling device (typically a mobile phone) should connect to a local server rather than the cloud broker. The sample application demonstrates a working setup where multiple local MQTT clients can communicate with each other as well as talk to a remote client via an external broker.</p>
+<p>For simplicity, the following abbreviations are used:</p>
+<ul>
+<li><strong>LC</strong>: MQTT Client (Local Client)<ul>
+<li>This can be the SimpleLink platform(s) running the MQTT Client application or a smartphone</li>
+</ul>
+</li>
+<li><strong>LS</strong>: One SimpleLink platform running MQTT Server/Bridge (Local Server)</li>
+<li><strong>RC</strong>: Remote MQTT Client (mobile MQTT app connected to the Eclipse MQTT Broker)</li>
+<li><strong>BR</strong>: External MQTT Broker (Eclipse MQTT Server, <a href="http://m2m.eclipse.org">http://m2m.eclipse.org</a>)</li>
+<li><strong>AP</strong>: The access point with internet connection</li>
+</ul>
+<p>LC1, LC2, and LS are all connected to the same AP. The server address configuration for LC(s) is the local address of LS.</p>
+<h2 id="task-4-setting-up-the-mqtt-server-bridge">Task 4: Setting up the MQTT Server/Bridge</h2>
+<ol>
+<li><p>Import the <code>mqtt_client_server_CC3220SF_LAUNCHXL_tirtos_ccs</code> example (<code>simplelink_cc32xx_sdk_x_xx_xx_xx/examples/rtos/CC3220SF_LAUNCHXL/demos/mqtt_client_server/tirtos/ccs</code>).</p>
+</li>
+<li><p>Take a look at your settings for the MQTT Server/Bridge. They can be found in the macros at the beginning of <code>mqtt_server_app.c</code>. The important ones are:</p>
+<ul>
+<li><code>SERVER_ADDRESS</code></li>
+<li><code>ClientId</code></li>
+<li><code>publish_topic</code></li>
+<li><code>SUBSCRIPTION_TOPIC0</code></li>
+<li><code>ENROLL_TOPIC</code>: These events received by the local MQTT server, will be distributed (published) to the cloud server
+<div class="modal-pop" style="cursor:zoom-in;"><img src="resources/serverdemo-serversettings.png" alt="Server Settings" class="img-responsive"></div></li>
+</ul>
+</li>
+<li><p>In <code>network_if.h</code>, update the <code>SSID_NAME</code>, <code>SECURITY_TYPE</code>, and <code>SECURITY_KEY</code> to connect to your own Access Point (like a router).</p>
+</li>
+<li><p>Recompile the MQTT Client-Server application and flash it to your LS (Local Server) device.</p>
+</li>
+</ol>
+<h2 id="task-5-setting-up-the-mqtt-client">Task 5: Setting up the MQTT Client</h2>
+<div class="alert alert-info float-right"><p> For additional instructions on CCS debugger, see task 2 of the <a href="../wifi_project_zero/wifi_project_zero.html">CC3220 Project Zero</a> lab.</p>
+</div>
+<ol>
+<li><p>We need to find the server IP address in order to set up the local client. To find the server IP address, start by running the MQTT Client-Server application on the target device with CCS debugger. This is your LS (Local Server).</p>
+</li>
+<li><p>Open a terminal emulation program such as TeraTerm and select the XDS110 Class Application/User UART port.</p>
+<div class="alert alert-warning "><p> <strong>UART Configuration</strong><br>
+ Baud rate: 115200<br>
+ Data: 8 bit<br>
+ Parity: None<br>
+ Stop: 1 bit<br>
+ Flow control: None</p>
+</div>
+</li>
+<li><p>Once the terminal is connected, run the Client-Server application and record the IP address. Enter this address in the <code>SERVER_IP_ADDRESS</code> definition inside the <code>mqtt_client_app.c</code> of the <code>mqtt_client</code> application.</p>
+</li>
+<li><p>Use the rest of settings from the MQTT Client example we completed earlier (task 1).</p>
+</li>
+<li><p>Search for the <code>Mqtt_ClientCtx</code> structure in <code>mqtt_client_app.c</code> in the Variables section. Set the flags and address to the local broker address (shown below). We need the Local Clients to be linked to the Local Server by IP address instead of the example's default URL.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_1')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_1" class="lang-c hljs cpp"> MQTTClient_NetAppConnParams_t Mqtt_ClientCtx =
+ {
+ <span class="hljs-comment">//    MQTTCLIENT_NETCONN_URL,</span>
+ <span class="hljs-comment">//    SERVER_ADDRESS,</span>
+ <span class="hljs-comment">//    PORT_NUMBER, 0, 0, 0,</span>
+ <span class="hljs-comment">//    NULL</span>
+      <span class="hljs-number">0</span>,
+      SERVER_IP_ADDRESS,
+      PORT_NUMBER, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>,
+      NULL
+ };
+</code></pre><span class="code-title"><p><strong>mqtt_client_app.c :: Mqtt_ClientCtx</strong></p>
+</span></div></div>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/mqtt_clientctx.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>Check that the three LEDs are being configured in the board files (<code>Board.h</code>, <code>CC3220SF_LAUNCHXL.h</code> and <code>CC3220SF_LAUNCHXL.c</code>). If missing, add the following code:</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_2')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_2" class="lang-c hljs cpp"> <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> Board_GPIO_LED0              CC3220SF_LAUNCHXL_GPIO_LED_D7</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> Board_GPIO_LED1              CC3220SF_LAUNCHXL_GPIO_LED_D6</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> Board_GPIO_LED2              CC3220SF_LAUNCHXL_GPIO_LED_D5</span>
+</code></pre><span class="code-title"><p><strong>Board.h</strong></p>
+</span></div></div>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_3')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_3" class="lang-c hljs cpp"> <span class="hljs-keyword">typedef</span> <span class="hljs-keyword">enum</span> CC3220SF_LAUNCHXL_GPIOName {
+     CC3220SF_LAUNCHXL_GPIO_SW2 = <span class="hljs-number">0</span>,
+     CC3220SF_LAUNCHXL_GPIO_SW3,
+     CC3220SF_LAUNCHXL_GPIO_LED_D7,
+     CC3220SF_LAUNCHXL_GPIO_LED_D6,
+     CC3220SF_LAUNCHXL_GPIO_LED_D5,
+
+     CC3220SF_LAUNCHXL_GPIOCOUNT
+ } CC3220SF_LAUNCHXL_GPIOName;
+</code></pre><span class="code-title"><p><strong>CC3220SF_LAUNCHXL.h</strong></p>
+</span></div></div>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_4')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_4" class="lang-c hljs cpp"> GPIO_PinConfig gpioPinConfigs[] = {
+     <span class="hljs-comment">/* input pins with callbacks */</span>
+     <span class="hljs-comment">/* CC3220SF_LAUNCHXL_GPIO_SW2 */</span>
+     GPIOCC32XX_GPIO_22 | GPIO_CFG_INPUT | GPIO_CFG_IN_INT_RISING,
+     <span class="hljs-comment">/* CC3220SF_LAUNCHXL_GPIO_SW3 */</span>
+     GPIOCC32XX_GPIO_13 | GPIO_CFG_INPUT | GPIO_CFG_IN_INT_RISING,
+
+     <span class="hljs-comment">/* output pins */</span>
+     <span class="hljs-comment">/* CC3220SF_LAUNCHXL_GPIO_LED_D7 */</span>
+     GPIOCC32XX_GPIO_09 | GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW,
+     <span class="hljs-comment">/* CC3220SF_LAUNCHXL_GPIO_LED_D6 */</span>
+     GPIOCC32XX_GPIO_10 | GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW,
+     <span class="hljs-comment">/* CC3220SF_LAUNCHXL_GPIO_LED_D5 */</span>
+     GPIOCC32XX_GPIO_11 | GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW,
+ };
+</code></pre><span class="code-title"><p><strong>CC3220SF_LAUNCHXL.c</strong></p>
+</span></div></div>
+<p> If you are using the CC3220S instead of the CC3220SF, adapt the code as needed.</p>
+</li>
+<li><p>Recompile the <code>mqtt_client</code> application and program this to another CC3220. This is your LC1 (Local Client #1). LC1 should connect to LS.</p>
+</li>
+<li><p>On your mobile app (LC2), connect to the same IP address you found with the MQTT server (task 5, step 3).
+ </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/serverdemo-app1.png" alt="Server Demo App" class="img-responsive"></div><p></p>
+</li>
+</ol>
+<h2 id="task-6-demo-local-communication-lc-to-lc-">Task 6: Demo Local Communication (LC to LC)</h2>
+<p>This sequence demonstrates local communication (between two clients on a local network). In this demo, <code>/cc32xx/ButtonPressEvtSw2</code> is the text for <code>PUBLISH_TOPIC0</code>. This message is triggered by pressing the SW2 on the CC3220 LaunchPad.</p>
+<ol>
+<li><p>Connect both local clients (LC1 and LC2) to the local server (LS).</p>
+</li>
+<li><p>LC2 subscribes to <code>PUBLISH_TOPIC0</code>. (Use the text: <code>/cc32xx/ButtonPressEvtSw2</code>.)</p>
+</li>
+<li><p>Press SW2 which makes LC1 publish <code>PUBLISH_TOPIC0</code>.</p>
+</li>
+</ol>
+<div class="bs-callout bs-callout-success "><h4><span class="glyphicon glyphicon-ok-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Results
+</span></h4>
+<ul>
+<li>LC2 receives the event (message will be printed through the terminal).</li>
+<li>Note that LS did <strong>not</strong> subscribe to the PUBLISH_TOPIC0, so LS shows nothing.</li>
+<li>RC (Remote Client) and BR (external broker) show nothing.</li>
+</ul>
+</div>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/serverdemo-app2.png" alt="Server Demo App" class="img-responsive"></div><p></p>
+<h2 id="task-7-demo-remote-control-rc-to-lc-">Task 7: Demo Remote Control (RC to LC)</h2>
+<p>This sequence demonstrates communication between a remote client (through the cloud) and an IOT device. In this demo, <code>/Broker/To/cc32xx</code> will be the text for <code>SUBSCRIPTION_TOPIC0</code>. This message is triggered by entering text on RC.</p>
+<ol>
+<li><p>LC1 subscribes to <code>SUBSCRIPTION_TOPIC0</code>. (Use the text: <code>/Broker/To/cc32xx</code>.)</p>
+</li>
+<li><p>LS (as a client of the BR) also subscribes to the same topic. LS will forward any message it receives from BR to the local network.</p>
+</li>
+<li><p>Publish the same text of <code>SUBSCRIPTION_TOPIC0</code> (<code>/Broker/To/cc32xx</code>) from the Remote Client (RC).</p>
+</li>
+</ol>
+<div class="bs-callout bs-callout-success "><h4><span class="glyphicon glyphicon-ok-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Results
+</span></h4>
+<ul>
+<li>LS receives <code>SUBSCRIPTION_TOPIC0</code> (see terminal), because topic is subscribed by LS.</li>
+<li>LS will publish the message in the local network.</li>
+<li>LC1 receives <code>SUBSCRIPTION_TOPIC0</code> (see terminal) as a client on the local network.</li>
+<li>Note LC2 shows nothing because it did not subscribe to <code>SUBSCRIPTION_TOPIC0</code>.</li>
+</ul>
+</div>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/serverdemo-app3.png" alt="Server Demo App" class="img-responsive"></div><p></p>
+<h2 id="task-8-add-a-new-publish-function-to-mqtt-client">Task 8: Add a New Publish Function to MQTT Client</h2>
+<p>All the following modifications for this task are done within <code>mqtt_client_CC3220SF_LAUNCHXL_tirtos_ccs/mqtt_client_app.c</code>. We will be using this function later in the demos.</p>
+<ol>
+<li><p>Add the function below to <code>mqtt_client_app.c</code>. This publishes the status of the three LEDs.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_5')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_5" class="lang-c hljs cpp"> <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> "stdio.h"</span>
+ <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> PUBLISH_TOPIC1  "/cc32xx/To/Broker"</span>
+ <span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span> *publish_topic1 = { PUBLISH_TOPIC1 };
+
+ <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">PublishLedStatusReport</span><span class="hljs-params">()</span>
+ </span>{
+     <span class="hljs-keyword">char</span> pubMsg[<span class="hljs-number">20</span>];
+
+     <span class="hljs-comment">/* retreive status of LEDs */</span>
+     <span class="hljs-built_in">sprintf</span>(pubMsg, <span class="hljs-string">"L1=%d, L2=%d, L3=%d"</span>, GPIO_read(Board_LED0), GPIO_read(Board_LED1), GPIO_read(Board_LED2));
+     <span class="hljs-comment">/* send publish message */</span>
+     MQTTClient_publish(gMqttClient, (<span class="hljs-keyword">char</span> *)publish_topic1, <span class="hljs-built_in">strlen</span>((<span class="hljs-keyword">char</span> *)publish_topic1), pubMsg, <span class="hljs-number">16</span>, MQTT_QOS_2 | MQTT_PUBLISH_RETAIN);
+
+     UART_PRINT(<span class="hljs-string">"\n\r CC3220 Publishes the following message \n\r"</span>);
+     UART_PRINT(<span class="hljs-string">"Topic: %s\n\r"</span>, publish_topic1);
+     UART_PRINT(<span class="hljs-string">"Data: %s\n\r"</span>, pubMsg);
+ }
+</code></pre><span class="code-title"><p><strong>mqtt_client_app.c</strong></p>
+</span></div></div>
+</li>
+<li><p>Add the <code>PublishLedStatusReport()</code> function call to the incoming message handler in <code>MqttClient()</code> as shown below.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_6')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_6" class="lang-c hljs cpp"> PublishLedStatusReport();
+</code></pre><span class="code-title"><p><strong>mqtt_client_app.c :: MqttClient()</strong></p>
+</span></div></div>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/serverdemo-modifiedcode.png" alt="Modified MQTT Client" class="img-responsive"></div><p></p>
+</li>
+<li><p>Recompile the <code>mqtt_client</code> application and program this to another CC3220. This is still your LC1 (Local Client #1).</p>
+</li>
+</ol>
+<h2 id="task-9-demo-remote-notification-lc-to-rc-">Task 9: Demo Remote Notification (LC to RC)</h2>
+<p>This sequence demonstrates an IOT device sending a notification to a remote client (through the local server and the cloud broker). In this demo, <code>/cc32xx/To/Broker</code> will be the text for <code>PUBLISH_TOPIC1</code> and <code>ENROLLED_TOPIC</code>.</p>
+<ol>
+<li><p>Subscribe RC to <code>PUBLISH_TOPIC1</code>. (Use the text: <code>/cc32xx/To/Broker</code>.)</p>
+</li>
+<li><p>Enroll LS to topic <code>ENROLLED_TOPIC</code> which has the same string as <code>PUBLISH_TOPIC1</code> (<code>/cc32xx/To/Broker</code>).</p>
+<ul>
+<li>LS subscribes on an <code>ENROLLED_TOPIC</code> within the local network (as any other client). Whenever it will receive an enrolled message, LS will publish it to BR.</li>
+</ul>
+</li>
+<li><p>Publish <code>PUBLISH_TOPIC1</code> (<code>/cc32xx/To/Broker</code>) from LC1.</p>
+</li>
+</ol>
+<div class="bs-callout bs-callout-success "><h4><span class="glyphicon glyphicon-ok-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Results
+</span></h4>
+<ul>
+<li>LS receives <code>PUBLISH_TOPIC1</code> (prints to terminal) and passes onto BR.</li>
+<li>RC receives <code>PUBLISH_TOPIC1</code> (prints to terminal).</li>
+<li>LC2 shows nothing because it did not subscribe to <code>PUBLISH_TOPIC1</code>.</li>
+</ul>
+</div>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/serverdemo-app4.png" alt="Server Demo App" class="img-responsive"></div><p></p>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Technical support
+</span></h4>
+<p>For any questions, please search on the <a href="https://e2e.ti.com">TI SimpleLink Wi-Fi E2E Forum</a></p>
+</div>
+<div align="center" style="margin-top: 4em; font-size: smaller;">
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="../../web_support/cc_license_icon.png"></a><br>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.</div>
+
+</div><div class="col-xs-4 col-sm-2 sidebar-offcanvas bs-docs-sidebar hidden-print" id="sidebar-overview"><ul class="nav nav-stacked fixed" id="sidebar"><li><a href="#introduction">Introduction</a></li><li><a href="#prerequisites">Prerequisites</a><ul class="nav nav-stacked"><li><a href="#software">Software</a></li><li><a href="#hardware">Hardware</a></li></ul></li><li><a href="#mqtt-overview">MQTT Overview</a><ul class="nav nav-stacked"><li><a href="#mqtt-protocol">MQTT Protocol</a></li><li><a href="#simplelink-mqtt-library">SimpleLink MQTT Library</a></li></ul></li><li><a href="#mqtt-client-demo">MQTT Client Demo</a><ul class="nav nav-stacked"><li><a href="#task-1-preparing-the-mqtt-client-application">Task 1: Preparing the MQTT Client application</a></li><li><a href="#task-2-setting-up-the-mqtt-client-demo">Task 2: Setting up the MQTT Client demo</a></li><li><a href="#task-3-running-the-mqtt-client-application">Task 3: Running the MQTT Client application</a></li></ul></li><li><a href="#mqtt-client-server-demo">MQTT Client-Server Demo</a><ul class="nav nav-stacked"><li><a href="#task-4-setting-up-the-mqtt-server-bridge">Task 4: Setting up the MQTT Server/Bridge</a></li><li><a href="#task-5-setting-up-the-mqtt-client">Task 5: Setting up the MQTT Client</a></li><li><a href="#task-6-demo-local-communication-lc-to-lc-">Task 6: Demo Local Communication (LC to LC)</a></li><li><a href="#task-7-demo-remote-control-rc-to-lc-">Task 7: Demo Remote Control (RC to LC)</a></li><li><a href="#task-8-add-a-new-publish-function-to-mqtt-client">Task 8: Add a New Publish Function to MQTT Client</a></li><li><a href="#task-9-demo-remote-notification-lc-to-rc-">Task 9: Demo Remote Notification (LC to RC)</a></li></ul></li></ul></div></div></div></div>
+
+<link rel="stylesheet" href="../../web_support/highlight/styles/zenburn.css">
+<script src="../../web_support/strapdown/vendor/jquery-1.11.2.min.js"></script>
+<script src="../../web_support/strapdown/vendor/bootstrap.min.js"></script>
+<script src="../../web_support/highlight/highlight.pack.js"></script>
+<script type="text/javascript">document.isPreRendered = true;</script><script src="../../web_support/strapdown/v/0.2/strapdown.js"></script>      <div class="modal" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">        <div class="vertical-alignment-helper">          <div class="modal-dialog vertical-align-center">             <div class="modal-dialog">               <div class="modal-content" style="margin-left: auto;margin-right: auto;">                 <div class="modal-body">                   <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>                   <img src="" class="imagepreview img-responsive">                 </div>              </div>            </div>          </div>        </div>      </div>
+
+
+</body></html>

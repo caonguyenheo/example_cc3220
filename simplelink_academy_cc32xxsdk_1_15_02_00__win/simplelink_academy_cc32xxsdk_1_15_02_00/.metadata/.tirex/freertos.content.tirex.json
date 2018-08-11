@@ -1,0 +1,12 @@
+[
+    {
+        "name": "FreeRTOS Basics",
+        "resourceType": "file",
+        "fileType": ".html",
+        "location": "../../modules/freertos_basics/freertos_basics.html",
+        "description": "Introduction to using FreeRTOS with the SimpleLink MCU SDK",
+        "categories": [ "Labs", "FreeRTOS"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    }
+]

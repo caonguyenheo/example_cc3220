@@ -1,0 +1,369 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>SimpleLink SDK TI Drivers Configuration</title>
+<link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/ubuntu-regular-woff.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/glyphicons-halflings-regular.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/united2.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/bootstrap-responsive.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/strapdown.css"><link rel="shortcut icon" type="image/x-icon" href="../../.metadata/favicon.ico"></head>
+
+<!-- START PRE -->
+
+
+
+
+
+
+<!-- END PRE -->
+
+<body style=""><div class="container"><nav class="navbar navbar-default navbar-static-top"><div class="container-fluid"> <div class="navbar-header">  <div id="headline" class="navbar-brand">SimpleLink SDK TI Drivers Configuration</div> </div> </div></nav><div class="container"><div class="row row-offcanvas row-offcanvas-left"><div class="col-xs-12 col-sm-9" id="content"><h1 id="introduction">Introduction</h1>
+<p>This workshop will dive into the details on how to configure TI Drivers for all SimpleLink Devices. We'll use these different devices in this workshop but the concepts are the same for all TI Drivers on all SimpleLink devices.</p>
+<p>The TI Drivers are divided into two levels</p>
+<ul>
+<li><strong>TI Driver Interface</strong>: The TI Drivers interface contain the APIs, data structures and macros that the application uses. These interfaces are the same for all SimpleLink Devices.</li>
+<li><p><strong>Low Level Implementations (LLI)</strong>: The LLI Drivers contains the bulk of the driver implementation. It contains device/peripheral data structures and macros that are used when configuring the driver instance. The application does not call LLI APIs directly. The TI Driver Interface APIs call LLI APIs. This allows multiple types of driver implementations for a single peripheral (e.g. both UART w/ DMA and UART w/o DMA implementations can exist in an application).</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/driver_levels.png" alt="" class="img-responsive"></div><p></p>
+</li>
+</ul>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Terminology
+</span></h4>
+<p>  <strong>Driver Instance</strong>: An driver instance is a single element in the driver config structure (e.g. <code>UART_config</code>). Generally a driver instance maps to a single hardware peripheral.</p>
+</div>
+<p>The two level driver approach allows an application to use two different driver implementations for the peripherals. For example, the
+application can use a DMA based UART driver on UART instance X and a non-DMA based UART driver on UART instance Y at the same time.</p>
+<p>The TI Drivers use the Data Porting Layer (DPL) to communicate with the RTOS kernel. The application should not use DPL directly.</p>
+<p><strong>Here's what we'll learn:</strong></p>
+<ul>
+<li>Overview of TI Driver configuration</li>
+<li>How to use a TI Driver instance</li>
+<li>How to remove a TI Driver instance (via a lab)</li>
+<li>How to add a TI Driver instance</li>
+</ul>
+<h1 id="prerequisites">Prerequisites</h1>
+<h2 id="recommended-background-reading">Recommended Background Reading</h2>
+<ul>
+<li><a href="../tidrivers_project_zero/tidrivers_project_zero.html">TI Drivers Project Zero</a></li>
+</ul>
+<h2 id="software">Software</h2>
+<ul>
+<li>This tutorial can be done 100% with a web browser in <a href="https://dev.ti.com/ide">CCS Cloud</a>. However, the exercises can also be completed using desktop/offline tools as well.</li>
+</ul>
+<h2 id="hardware">Hardware</h2>
+<ul>
+<li>Any SimpleLink LaunchPad Development Kits</li>
+</ul>
+<h1 id="board-files">Board files</h1>
+<p>These are the five different files used in every TI Driver example. We use the term "board" generically here. The actual names of the files correspond to the name of the board (except for Board.h and Board.html). We when talk about the generic "board", it will be in <em>itialics</em>. For example <em>board</em>.c could be CC3220S_LAUNCHXL.c, MSP_EXP432P401R.c, etc.</p>
+<ul>
+<li><strong><em>board</em>.c</strong>: Source file with the TI Drivers configuration.</li>
+<li><strong><em>board</em>.h</strong>: Header file with the TI Drivers configuration.</li>
+<li><strong><em>board</em>.cmd/.lds/.icf</strong>: Linker file for the board. The .cmd is for CCS (TI) compiler, .lds is for GCC compiler and .icf is for IAR compiler.</li>
+<li><strong>Board.html</strong>: Picture of the board &amp; description of the LEDs, buttons, etc.</li>
+<li><strong>Board.h</strong>: Contains macros that allow driver examples to be portable across other boards. For example instead of using MSP_EXP432P401R_GPIO_LED_ON, the application uses Board_GPIO_LED_ON.</li>
+</ul>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Important Note
+</span></h4>
+<p>  As noted above, these files are shipped with every driver example. These files are the same for all examples for a specific board. So every MSP_EXP432P401R.c in all SimpleLink MSP43x SDK examples are the same.</p>
+<p>  We expect the user to change these files as needed (especially for their custom boards). However the SimpleLink SDK treats these files
+  as released code. We try to avoid changing these files between releases. If a change is required (e.g. to
+  add a new feature), the change will be noted in the release notes.</p>
+</div>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Missing Configuration
+</span></h4>
+<p>  Not all peripherals are configured in the board files supplied in the examples. For some devices, it is impossible to configure all the peripherals since some are
+  mutally exclusive (e.g. UARTx and I2Cy might share the same pin). Note: some of the <em>board</em>.c files have #if's to allow changing the configuration.</p>
+</div>
+<p>  Let's look at each one of these files in more detail.</p>
+<h3 id="-board-c"><em>board</em>.c</h3>
+<p>The <em>board</em>.c file contains all the TI Drivers configuration code. While the following will try to cover the main points, please refer to the TI Drivers Runtime APIs in the Documentation Overview. Here you will get more device/peripheral specific information.</p>
+<blockquote>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/doxygen_overview.png" alt="" class="img-responsive"></div><p></p>
+</blockquote>
+<p>The driver configuration is broken into four parts.</p>
+<ul>
+<li><strong>LLI driver specific objects</strong></li>
+<li><strong>LLI driver specific hardware attributes</strong></li>
+<li><strong>TI Driver configuration structure</strong></li>
+<li><strong>TI Driver instance count</strong></li>
+</ul>
+<p>These (except the objects) can be a const and therefore can be placed in flash. The drivers treat these as read-only. The application cannot modify
+these once the drivers init call is made.</p>
+<p>Let's look at each one of these in more detail...</p>
+<ul>
+<li><p><strong>LLI driver specific objects</strong>: These structures provide the memory to the driver. This allows the drivers to avoid memory allocation. The application
+should not initialize or access these directly. They are used strictly in the driver modules.
+Here is an example (note: CC1350STK_I2CCOUNT constant will be discussed in the <em>board</em>.h section below).</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_1')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_1" class="lang-c hljs cpp">I2CCC26XX_Object i2cCC26xxObjects[CC1350STK_I2CCOUNT];
+</code></pre><span class="code-title"><p><strong>CC1350STK.c</strong></p>
+</span></div></div>
+<p>These object must be in RAM since they are modified by the drivers.</p>
+</li>
+<li><p><strong>LLI driver specific hardware attributes</strong>: These structures provide the configuration to the driver. Typically the macros are from the
+source/ti/devices/specific device/driverlib and the LLI Driver's header files. The drivers take this information and configure the peripherals as requested.
+The actual fields in this structure are driver specific. Please refer to the LLI Driver documentation for more details about specific
+fields.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_2')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_2" class="lang-c hljs cpp"><span class="hljs-keyword">const</span> I2CCC26XX_HWAttrsV1 i2cCC26xxHWAttrs[CC1350STK_I2CCOUNT] = {
+    {
+        .baseAddr    = I2C0_BASE,
+        .powerMngrId = PowerCC26XX_PERIPH_I2C0,
+        .intNum      = INT_I2C_IRQ,
+        .intPriority = ~<span class="hljs-number">0</span>,
+        .swiPriority = <span class="hljs-number">0</span>,
+        .sdaPin      = CC1350STK_I2C0_SDA0,
+        .sclPin      = CC1350STK_I2C0_SCL0,
+    }
+};
+</code></pre><span class="code-title"><p><strong>CC1350STK.c</strong></p>
+</span></div></div>
+</li>
+</ul>
+<ul>
+<li><p><strong>Driver Configuration Structure</strong>: This is the structure that knits the configuration pieces together. The driver module is expecting this
+structure. You see that the above objects and hardware attributes are passed in here. The fxnTablePtr is used by the TI Driver interface to know what LLI driver
+to use. For a list of the names of the LLI drivers, please refer to the TI Drivers Runtime APIs (as shown on the Recommended Reading above).</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_3')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_3" class="lang-c hljs cpp"><span class="hljs-keyword">const</span> I2C_Config I2C_config[CC1350STK_I2CCOUNT] = {
+    {
+        .fxnTablePtr = &amp;I2CCC26XX_fxnTable,
+        .object      = &amp;i2cCC26xxObjects[CC1350STK_I2C0],
+        .hwAttrs     = &amp;i2cCC26xxHWAttrs[CC1350STK_I2C0]
+    },
+};
+</code></pre><span class="code-title"><p><strong>CC1350STK.c</strong></p>
+</span></div></div>
+</li>
+<li><p><strong>Driver Instance Count</strong>: This is the variable that tells the driver how many instances for a specific driver exists.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_4')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_4" class="lang-c hljs cpp"><span class="hljs-keyword">const</span> <span class="hljs-keyword">uint_least8_t</span> I2C_count = CC1350STK_I2CCOUNT;
+</code></pre><span class="code-title"><p><strong>CC1350STK.c</strong></p>
+</span></div></div>
+</li>
+</ul>
+<h3 id="-board-h"><em>board</em>.h</h3>
+<p>This file includes the enums and constants from the <em>board</em>.c file. The last enum in this (CC1350STK_I2CCOUNT in this case) will determine the length of arrays in the following sections.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_5')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_5" class="lang-c hljs cpp">  <span class="hljs-keyword">typedef</span> <span class="hljs-keyword">enum</span> CC1350STK_I2CName {
+      CC1350STK_I2C0 = <span class="hljs-number">0</span>,
+
+      CC1350STK_I2CCOUNT
+  } CC1350STK_I2CName;
+
+  ...
+
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> CC1350STK_I2C0_SDA0             IOID_5</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> CC1350STK_I2C0_SCL0             IOID_6</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> CC1350STK_I2C0_SDA1             IOID_8</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> CC1350STK_I2C0_SCL1             IOID_9</span>
+</code></pre><span class="code-title"><p><strong>CC1350STK.h</strong></p>
+</span></div></div>
+<h3 id="-board-cmd-lds-icf"><em>board</em>.cmd/.lds/.icf</h3>
+<p>This file is the linker file for the example. This file contains the memory segments and data/code sections definitions.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_6')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_6" class="hljs cpp">  SECTIONS
+  {
+      .text   :   &gt; MAIN
+      .TI.ramfunc : {} load=MAIN, run=SRAM_CODE, table(BINIT)
+      .<span class="hljs-keyword">const</span>  :   &gt; MAIN
+      .cinit  :   &gt; MAIN
+      .pinit  :   &gt; MAIN
+
+      .data   :   &gt; SRAM_DATA
+      .bss    :   &gt; SRAM_DATA
+      .sysmem :   &gt; SRAM_DATA
+
+      <span class="hljs-comment">/* Heap buffer used by HeapMem */</span>
+      .priheap   : {
+          __primary_heap_start__ = .;
+          . += HEAPSIZE;
+          __primary_heap_end__ = .;
+      } &gt; SRAM_DATA align <span class="hljs-number">8</span>
+
+      .<span class="hljs-built_in">stack</span>  :   &gt; SRAM_DATA (HIGH)
+  }
+</code></pre><span class="code-title"><p><strong>MSP_EXP432P401R_TIRTOS.cmd</strong></p>
+</span></div></div>
+<p>  Please note that the Driver examples use <code>__primary_heap_start__</code> and <code>__primary_heap_end__</code> to size the system heap.</p>
+<h3 id="board-h">Board.h</h3>
+<p>This file is used to map <em>board</em>.h macros/APIs/etc. to generic Board macros/APIs/etc. This allows an example to work on multiple devices.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_7')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_7" class="lang-c hljs cpp">  <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> Board_I2C0              CC1350STK_I2C0</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> Board_I2C0_SDA1         CC1350STK_I2C0_SDA1</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> Board_I2C0_SCL1         CC1350STK_I2C0_SCL1</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> Board_I2C_TMP           CC1350STK_I2C0</span>
+</code></pre><span class="code-title"><p><strong>Board.h on CC1350STK</strong></p>
+</span></div></div>
+<h3 id="board-html">Board.html</h3>
+<p>This file contains a picture of the board and descriptions that are helpful with the examples. For example for the CC1350STK board:</p>
+<blockquote>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/CC1350STK.jpg" alt="" class="img-responsive"></div><p></p>
+</blockquote>
+<h1 id="using-a-driver-instance">Using a driver instance</h1>
+<p>While this is covered in more detail in the TI Drivers Overview workshop, we'll cover it briefly here to tie everything together.</p>
+<p>The driver module must be initialized before the driver can be used. For example, you must have <code>I2C_config</code> and <code>I2C_count</code> setup and then
+call <code>I2C_init()</code>. The driver init function can be called in <code>main()</code> or in a thread. The init call simply sets up the software in the module.</p>
+<p>To open an instance, use the enum from the Board.h file. For example</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_8')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_8" class="lang-c hljs cpp">  UART_Handle uart;
+
+  uart = UART_open(Board_UART0, NULL); <span class="hljs-comment">/* NULL parameter structure means to use the default values */</span>
+</code></pre></div></div>
+<p>  Internally in the TI Driver, the <code>Board_UART0</code> value is used to index into Driver configuration array (e.g. <code>UART_config</code>) to get the
+  function table, object, and HwAttrs to be used.</p>
+<h1 id="lab-removing-a-driver-instance">Lab: Removing a driver instance</h1>
+<p>All the launchpad (and some of the sensor tags) have at least two SPI instances defined in the <em>board</em> files. These are present to allow the SPI Loopback example to work. Let's remove the second SPI instance to reduce the footprint of the application. We'll use the CC1350_LAUNCHXL as an example, but the concepts are the same for all boards.</p>
+<h2 id="task-1-import-empty-and-build-it">Task 1: Import Empty and build it</h2>
+<p>Please import the empty project CC1350_LAUNCHXL. We're assuming you've done enough of these workshops to know how to import an example. If you don't please refer to <a href="../tidrivers_project_zero/tidrivers_project_zero.html">TI Drivers Project Zero</a> for instruction.</p>
+<h2 id="task-2-add-in-spi_init-">Task 2: Add in <code>SPI_init()</code></h2>
+<p>Since the <code>empty</code> project does not use SPI and compilers are smart, none of SPI driver code is pulled in. Let's uncomment the <code>SPI_init()</code> call in <code>mainThread()</code> in <code>empty.c</code>. Now the SPI code is pulled in. Let's build the project and look at the <code>empty_CC1350_LAUNCHXL_tirtos_ccs.map</code> file to see how much memory is being used. (Note: your mileage may vary based on compiler, options, version of SDK, etc.).</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_9')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_9" class="hljs cpp">           name            origin    length      used     unused   attr    fill
+  ----------------------  --------  ---------  --------  --------  ----  --------
+    FLASH                 <span class="hljs-number">00000000</span>   <span class="hljs-number">00020000</span>  <span class="hljs-number">000043e4</span>  <span class="hljs-number">0001</span>bc1c  R  X
+    SRAM                  <span class="hljs-number">20000000</span>   <span class="hljs-number">00005000</span>  <span class="hljs-number">00000f</span>71  <span class="hljs-number">0000408f</span>  RW X
+</code></pre><span class="code-title"><p>empty_CC1350_LAUNCHXL_tirtos_ccs.map</p>
+</span></div></div>
+<h2 id="task-3-remove-the-spi-instance-from-board-h">Task 3: Remove the SPI instance from Board.h</h2>
+<p>Comment out the second instance as shown</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_10')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_10" class="lang-c hljs cpp">  <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> Board_SPI0              CC1350_LAUNCHXL_SPI0</span>
+  <span class="hljs-comment">//#define Board_SPI1              CC1350_LAUNCHXL_SPI1</span>
+</code></pre><span class="code-title"><p>Board.h</p>
+</span></div></div>
+<h2 id="task-4-remove-the-spi-instance-from-cc1350_launchxl-h">Task 4: Remove the SPI instance from CC1350_LAUNCHXL.h</h2>
+<p>Comment out the second instance as shown</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_11')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_11" class="lang-c hljs cpp">  <span class="hljs-keyword">typedef</span> <span class="hljs-keyword">enum</span> CC1350_LAUNCHXL_SPIName {
+    CC1350_LAUNCHXL_SPI0 = <span class="hljs-number">0</span>,
+    <span class="hljs-comment">//CC1350_LAUNCHXL_SPI1,</span>
+
+    CC1350_LAUNCHXL_SPICOUNT
+  } CC1350_LAUNCHXL_SPIName;
+</code></pre><span class="code-title"><p>CC1350_LAUNCHXL.h</p>
+</span></div></div>
+<h2 id="task-5-remove-the-spi-instance-from-cc1350_launchxl-c">Task 5: Remove the SPI instance from CC1350_LAUNCHXL.c</h2>
+<p>Comment out the second instance as shown</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_12')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_12" class="lang-c hljs cpp">  <span class="hljs-keyword">const</span> SPICC26XXDMA_HWAttrsV1 spiCC26XXDMAHWAttrs[CC1350_LAUNCHXL_SPICOUNT] = {
+    {
+        .baseAddr           = SSI0_BASE,
+        .intNum             = INT_SSI0_COMB,
+        .intPriority        = ~<span class="hljs-number">0</span>,
+        .swiPriority        = <span class="hljs-number">0</span>,
+        .powerMngrId        = PowerCC26XX_PERIPH_SSI0,
+        .defaultTxBufValue  = <span class="hljs-number">0</span>,
+        .rxChannelBitMask   = <span class="hljs-number">1</span>&lt;&lt;UDMA_CHAN_SSI0_RX,
+        .txChannelBitMask   = <span class="hljs-number">1</span>&lt;&lt;UDMA_CHAN_SSI0_TX,
+        .mosiPin            = CC1350_LAUNCHXL_SPI0_MOSI,
+        .misoPin            = CC1350_LAUNCHXL_SPI0_MISO,
+        .clkPin             = CC1350_LAUNCHXL_SPI0_CLK,
+        .csnPin             = CC1350_LAUNCHXL_SPI0_CSN
+    },
+<span class="hljs-comment">//    {</span>
+<span class="hljs-comment">//        .baseAddr           = SSI1_BASE,</span>
+<span class="hljs-comment">//        .intNum             = INT_SSI1_COMB,</span>
+<span class="hljs-comment">//        .intPriority        = ~0,</span>
+<span class="hljs-comment">//        .swiPriority        = 0,</span>
+<span class="hljs-comment">//        .powerMngrId        = PowerCC26XX_PERIPH_SSI1,</span>
+<span class="hljs-comment">//        .defaultTxBufValue  = 0,</span>
+<span class="hljs-comment">//        .rxChannelBitMask   = 1&lt;&lt;UDMA_CHAN_SSI1_RX,</span>
+<span class="hljs-comment">//        .txChannelBitMask   = 1&lt;&lt;UDMA_CHAN_SSI1_TX,</span>
+<span class="hljs-comment">//        .mosiPin            = CC1350_LAUNCHXL_SPI1_MOSI,</span>
+<span class="hljs-comment">//        .misoPin            = CC1350_LAUNCHXL_SPI1_MISO,</span>
+<span class="hljs-comment">//        .clkPin             = CC1350_LAUNCHXL_SPI1_CLK,</span>
+<span class="hljs-comment">//        .csnPin             = CC1350_LAUNCHXL_SPI1_CSN</span>
+<span class="hljs-comment">//    }</span>
+};
+
+<span class="hljs-keyword">const</span> SPI_Config SPI_config[CC1350_LAUNCHXL_SPICOUNT] = {
+    {
+         .fxnTablePtr = &amp;SPICC26XXDMA_fxnTable,
+         .object      = &amp;spiCC26XXDMAObjects[CC1350_LAUNCHXL_SPI0],
+         .hwAttrs     = &amp;spiCC26XXDMAHWAttrs[CC1350_LAUNCHXL_SPI0]
+    },
+<span class="hljs-comment">//    {</span>
+<span class="hljs-comment">//         .fxnTablePtr = &amp;SPICC26XXDMA_fxnTable,</span>
+<span class="hljs-comment">//         .object      = &amp;spiCC26XXDMAObjects[CC1350_LAUNCHXL_SPI1],</span>
+<span class="hljs-comment">//         .hwAttrs     = &amp;spiCC26XXDMAHWAttrs[CC1350_LAUNCHXL_SPI1]</span>
+<span class="hljs-comment">//    },</span>
+};
+</code></pre><span class="code-title"><p>CC1350_LAUNCHXL.c</p>
+</span></div></div>
+<h2 id="task-6-build-and-compare-size">Task 6: Build and compare size</h2>
+<p>Let's build and look at the mapfile again.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_13')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_13" class="hljs sql">           name            origin    length      used     unused   attr    fill
+  <span class="hljs-comment">----------------------  --------  ---------  --------  --------  ----  --------</span>
+    FLASH                 00000000   00020000  000043bc  0001bc44  R  X
+    SRAM                  20000000   00005000  00000e95  0000416b  RW X
+</code></pre><span class="code-title"><p>empty_CC1350_LAUNCHXL_tirtos_ccs.map</p>
+</span></div></div>
+<p>It went down (as expected). We saved 40 bytes of flash and 220 bytes of RAM.</p>
+<h1 id="adding-a-uart">Adding a UART</h1>
+<p>Adding a driver instance is basically the opposite of removing one. Let's add another UART instance (say we looked at the data sheet and determined UARTA3 was a good choice based on pin conflicts) to the MSP432.</p>
+<ul>
+<li><p>First let's update the MSP_EXP432P401R.h file. Add the new instance (MSP_EXP432P401R_UARTA3) into the UART enum definition.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_14')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_14" class="lang-c hljs cpp"><span class="hljs-keyword">typedef</span> <span class="hljs-keyword">enum</span> MSP_EXP432P401R_UARTName {
+    MSP_EXP432P401R_UARTA0 = <span class="hljs-number">0</span>,
+    MSP_EXP432P401R_UARTA2,
+    MSP_EXP432P401R_UARTA3,  <span class="hljs-comment">/* new one!! */</span>
+
+    MSP_EXP432P401R_UARTCOUNT
+} MSP_EXP432P401R_UARTName;
+</code></pre></div></div>
+<p>The MSP_EXP432P401R_UARTCOUNT value will increase automatically.</p>
+</li>
+<li><p>Second let's update the MSP_EXP432P401R.c file.</p>
+<p>Since we increased <code>MSP_EXP432P401R_UARTCOUNT</code> in the MSP_EXP432P401R.h file, we don't need to manually adjust any arrays. We will need to fill in the HwAttrs and MSP432_config arrays though.</p>
+<p>Look at the data sheet to determine which pins you want to use for the UARTA3. This dictates settings below. For more specific details about each field, please refer to TI Drivers Runtime APIs (as shown on the Recommended Reading above).</p>
+<p>For this example, the second entry was cut and pasted to create the third element of the array. Comment on the lines below denote which fields needed to be changed (and where the value was obtained from).</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_15')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_15" class="lang-c hljs cpp"><span class="hljs-keyword">const</span> UARTMSP432_HWAttrsV1 uartMSP432HWAttrs[MSP_EXP432P401R_UARTCOUNT] = {
+         ...
+         .txPin = UARTMSP432_P3_3_UCA2TXD
+    }, <span class="hljs-comment">/* existing */</span>
+    {  <span class="hljs-comment">/* new */</span>
+        .baseAddr = EUSCI_A3_BASE,    <span class="hljs-comment">/* obtained from device specific header file in driverlib */</span>
+        .intNum = INT_EUSCIA3,        <span class="hljs-comment">/* obtained from  driverlib/interrupt.h */</span>
+        .intPriority = (~<span class="hljs-number">0</span>),
+        .clockSource = EUSCI_A_UART_CLOCKSOURCE_SMCLK,
+        .bitOrder = EUSCI_A_UART_LSB_FIRST,
+        .numBaudrateEntries = <span class="hljs-keyword">sizeof</span>(uartMSP432Baudrates) /
+                              <span class="hljs-keyword">sizeof</span>(UARTMSP432_BaudrateConfig),
+        .baudrateLUT = uartMSP432Baudrates,
+        .ringBufPtr  = uartMSP432RingBuffer[MSP_EXP432P401R_UARTA3],         <span class="hljs-comment">/* Use the correct index! */</span>
+        .ringBufSize = <span class="hljs-keyword">sizeof</span>(uartMSP432RingBuffer[MSP_EXP432P401R_UARTA3]), <span class="hljs-comment">/* Use the correct index! */</span>
+        .rxPin = UARTMSP432_P9_6_UCA3RXD,   <span class="hljs-comment">/* from UARTMSP432 doxygen (with help from the data sheet) */</span>
+        .txPin = UARTMSP432_P9_7_UCA3TXD    <span class="hljs-comment">/* from UARTMSP432 doxygen (with help from the data sheet) */</span>
+    }
+</code></pre></div></div>
+<p>Now the UART_config needs the new instance filled in with the objects, hardware attrs and function table.
+Again cut/paste the second entry to create the third element of the array and adjust accordingly.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_16')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_16" class="lang-c hljs cpp"><span class="hljs-keyword">const</span> UART_Config UART_config[MSP_EXP432P401R_UARTCOUNT] = {
+  {
+      .fxnTablePtr = &amp;UARTMSP432_fxnTable,
+      .object = &amp;uartMSP432Objects[MSP_EXP432P401R_UARTA0],
+      .hwAttrs = &amp;uartMSP432HWAttrs[MSP_EXP432P401R_UARTA0]
+  },
+  {
+      .fxnTablePtr = &amp;UARTMSP432_fxnTable,
+      .object = &amp;uartMSP432Objects[MSP_EXP432P401R_UARTA2],
+      .hwAttrs = &amp;uartMSP432HWAttrs[MSP_EXP432P401R_UARTA2]
+  },
+  { <span class="hljs-comment">/* New entry */</span>
+      .fxnTablePtr = &amp;UARTMSP432_fxnTable,
+      .object = &amp;uartMSP432Objects[MSP_EXP432P401R_UARTA3], <span class="hljs-comment">/* Use the correct index! */</span>
+      .hwAttrs = &amp;uartMSP432HWAttrs[MSP_EXP432P401R_UARTA3] <span class="hljs-comment">/* Use the correct index! */</span>
+  }
+};
+</code></pre></div></div>
+</li>
+</ul>
+<ul>
+<li><p>Add the new UART into Board.h. You can give whatever name you like, but for boring consistency...</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_17')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_17" class="lang-c hljs cpp"><span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> Board_UART0                 MSP_EXP432P401R_UARTA0</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> Board_UART1                 MSP_EXP432P401R_UARTA2</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> Board_UART2                 MSP_EXP432P401R_UARTA3  /* Added UART! */</span>
+</code></pre></div></div>
+<p>Can now call UART_open(Board_UART2, &amp;params) to get the handle and start communicating with UARTA3 on the MSP432 device.</p>
+</li>
+</ul>
+<div align="center" style="margin-top: 4em; font-size: smaller;">
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="../../web_support/cc_license_icon.png"></a><br>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.</div>
+
+</div><div class="col-xs-4 col-sm-2 sidebar-offcanvas bs-docs-sidebar hidden-print" id="sidebar-overview"><ul class="nav nav-stacked fixed" id="sidebar"><li><a href="#introduction">Introduction</a></li><li><a href="#prerequisites">Prerequisites</a><ul class="nav nav-stacked"><li><a href="#recommended-background-reading">Recommended Background Reading</a></li><li><a href="#software">Software</a></li><li><a href="#hardware">Hardware</a></li></ul></li><li><a href="#board-files">Board files</a><ul class="nav nav-stacked"><ul class="nav nav-stacked"><li><a href="#-board-c">board.c</a></li><li><a href="#-board-h">board.h</a></li><li><a href="#-board-cmd-lds-icf">board.cmd/.lds/.icf</a></li><li><a href="#board-h">Board.h</a></li><li><a href="#board-html">Board.html</a></li></ul></ul></li><li><a href="#using-a-driver-instance">Using a driver instance</a></li><li><a href="#lab-removing-a-driver-instance">Lab: Removing a driver instance</a><ul class="nav nav-stacked"><li><a href="#task-1-import-empty-and-build-it">Task 1: Import Empty and build it</a></li><li><a href="#task-2-add-in-spi_init-">Task 2: Add in SPI_init()</a></li><li><a href="#task-3-remove-the-spi-instance-from-board-h">Task 3: Remove the SPI instance from Board.h</a></li><li><a href="#task-4-remove-the-spi-instance-from-cc1350_launchxl-h">Task 4: Remove the SPI instance from CC1350_LAUNCHXL.h</a></li><li><a href="#task-5-remove-the-spi-instance-from-cc1350_launchxl-c">Task 5: Remove the SPI instance from CC1350_LAUNCHXL.c</a></li><li><a href="#task-6-build-and-compare-size">Task 6: Build and compare size</a></li></ul></li><li><a href="#adding-a-uart">Adding a UART</a></li></ul></div></div></div></div>
+
+
+
+
+<link rel="stylesheet" href="../../web_support/highlight/styles/zenburn.css">
+<script src="../../web_support/strapdown/vendor/jquery-1.11.2.min.js"></script>
+<script src="../../web_support/strapdown/vendor/bootstrap.min.js"></script>
+<script src="../../web_support/highlight/highlight.pack.js"></script>
+<script type="text/javascript">document.isPreRendered = true;</script><script src="../../web_support/strapdown/v/0.2/strapdown.js"></script>      <div class="modal" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">        <div class="vertical-alignment-helper">          <div class="modal-dialog vertical-align-center">             <div class="modal-dialog">               <div class="modal-content" style="margin-left: auto;margin-right: auto;">                 <div class="modal-body">                   <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>                   <img src="" class="imagepreview img-responsive">                 </div>              </div>            </div>          </div>        </div>      </div>
+
+
+</body></html>

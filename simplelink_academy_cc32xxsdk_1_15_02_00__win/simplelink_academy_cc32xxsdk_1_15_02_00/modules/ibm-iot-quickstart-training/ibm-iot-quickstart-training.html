@@ -1,0 +1,219 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>IBM IoT QuickStart Training</title>
+<link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/ubuntu-regular-woff.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/glyphicons-halflings-regular.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/united2.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/bootstrap-responsive.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/strapdown.css"><link rel="shortcut icon" type="image/x-icon" href="../../.metadata/favicon.ico"></head>
+
+<!-- START PRE -->
+
+
+
+
+
+
+<!-- END PRE -->
+
+<body style=""><div class="container"><nav class="navbar navbar-default navbar-static-top"><div class="container-fluid"> <div class="navbar-header">  <div id="headline" class="navbar-brand">IBM IoT QuickStart Training</div> </div> </div></nav><div class="container"><div class="row row-offcanvas row-offcanvas-left"><div class="col-xs-12 col-sm-9" id="content"><h1 id="introduction">Introduction</h1>
+<p>This workshop shows how to connect the SimpleLink™ Wi-Fi® CC3220SF LaunchPad™ directly to the Watson IoT Platform, send data to the cloud, and how to push data to the Quickstart service for easy web browser display.</p>
+<p>IBM Watson IoT Platform is a fully managed, cloud-hosted service that makes it simple to build and deploy apps for IoT devices, sensors and gateways. It provides solutions for device registration, connectivity, control, rapid visualization and storage of data derived from the IoT. When combined with the IBM Bluemix® environment and access to secure Watson APIs, the platform allows you to integrate and analyze predictive, cognitive, and contextual analytics for stronger decision-making.</p>
+<h1 id="prerequisites">Prerequisites</h1>
+<h2 id="recommended-reading">Recommended Reading</h2>
+<ul>
+<li><a href="http://www.ti.com/lit/ug/swru461/swru461.pdf">SimpleLink Wi-Fi CC3220 Getting Started Guide</a></li>
+<li><a href="../wifi_mqtt/wifi_mqtt.html">SimpleLink Wi-Fi CC3220 MQTT</a></li>
+</ul>
+<h2 id="software">Software</h2>
+<ul>
+<li><a href="http://www.ti.com/tool/ccstudio">Code Composer Studio</a> v7.4 or later OR CCS Cloud <a href="http://dev.ti.com/ide">dev.ti.com/ide</a><ul>
+<li>Must have SimpleLink CC3xxx Wireless MCU support installed</li>
+<li>Make sure that CCS is using the latest updates: <strong>Help → Check for Updates</strong></li>
+</ul>
+</li>
+<li><a href="http://www.ti.com/tool/simplelink-cc3220-sdk">CC3220 SDK v1.60.00.04</a> or later</li>
+<li><a href="http://www.ti.com/tool/UNIFLASH">Uniflash</a> v4.2.1.15 or later.</li>
+<li>Terminal emulator program such as TeraTerm or PuTTY (115200/8/N/1)</li>
+</ul>
+<h2 id="hardware">Hardware</h2>
+<ul>
+<li>CC3220S or CC3220SF LaunchPad™ (<a href="http://www.ti.com/tool/cc3220s-launchxl">CC3220S-LAUNCHXL</a> or <a href="http://www.ti.com/tool/cc3220sf-launchxl">CC3220SF-LAUNCHXL</a>)</li>
+<li>1x Micro-USB cable (included with LaunchPad/BoosterPack)</li>
+<li>802.11b/g/n (2.4-GHz) Wireless Access Point (AP)</li>
+</ul>
+<h1 id="task-1-setup">Task 1: Setup</h1>
+<ol>
+<li><p>Complete the MQTT Client demo from the <a href="../wifi_mqtt/wifi_mqtt.html">Wi-Fi MQTT SimpleLink Acadamy training</a></p>
+<ul>
+<li>This training goes over the basics of MQTT using a generic example.</li>
+<li>The rest of this IBM MQTT training will use the foundations of the Wi-Fi MQTT module</li>
+</ul>
+</li>
+<li><p>General Settings</p>
+<ul>
+<li>Import the mqtt_client example from resource explorer for your platform <code>mqtt_client_CC3220SF_LAUNCHXL_tirtos_ccs</code></li>
+<li>Make sure the local access-point parameters (<code>SSID_NAME</code>, <code>SECURITY_TYPE</code> and <code>SECURITY_KEY</code>) defined in <code>network_if.h</code> are configured according to your local access-point. Note: use <code>SL_WLAN_SEC_TYPE_WPA_WPA2</code> for <code>SECURITY_TYPE</code> if you have a WPA/WPA2 AP.
+<div class="modal-pop" style="cursor:zoom-in;"><img src="resources/clientdemo-gensetting.png" alt="General Settings" class="img-responsive"></div></li>
+</ul>
+</li>
+</ol>
+<h1 id="task-2-configure-modify-mqtt-client-example">Task 2: Configure/modify MQTT Client example</h1>
+<ol>
+<li><p>MQTT Settings<br>
+ Settings for the demo can be found in the macros at the beginning of the <code>mqtt_client_app.c</code> source file. We need to modify the following:</p>
+<ul>
+<li>Modify <code>SERVER_ADDRESS</code> to point to the IBM Quickstart Broker <div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_1')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_1" class="lang-c hljs cpp">      <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> SERVER_ADDRESS           "quickstart.messaging.internetofthings.ibmcloud.com"</span>
+</code></pre><span class="code-title"><p><strong> mqtt_client_app.c :: LOCAL DEFINES</strong></p>
+</span></div></div>
+</li>
+<li>Modify the MQTT Topic and Data variable. Our <code>PUBLISH_TOPIC0_DATA</code> will be a variable, so we need to remove the define and set up a variable we can write to.<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_2')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_2" class="lang-c hljs cpp">      <span class="hljs-comment">/* Defining Publish Topic Values                                              */</span>
+      <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> PUBLISH_TOPIC0           "iot-2/evt/status/fmt/json"</span>
+      <span class="hljs-comment">//#define PUBLISH_TOPIC0_DATA      "Push Button SW2 has been pressed on CC32XX device"</span>
+</code></pre><span class="code-title"><p><strong> mqtt_client_app.c :: LOCAL DEFINES</strong></p>
+</span></div></div>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_3')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_3" class="lang-c hljs cpp">      <span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span> *publish_topic = { PUBLISH_TOPIC0 };
+      <span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span> *publish_data[<span class="hljs-number">1024</span>];
+</code></pre><span class="code-title"><p><strong>mqtt_client_app.c :: GLOBAL VARIABLES</strong></p>
+</span></div></div>
+</li>
+<li><p>Modify the <code>WILL</code> message.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_4')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_4" class="lang-c hljs cpp">      <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> WILL_TOPIC    "iot-2/evt/status/fmt/json"</span>
+      <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> WILL_MSG      "{\"d\":{\"state\":\"LastWillAndTestament\"}}"</span>
+      <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> WILL_QOS      MQTT_QOS_0</span>
+      <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> WILL_RETAIN   false</span>
+</code></pre><span class="code-title"><p><strong> mqtt_client_app.c :: LOCAL DEFINES</strong></p>
+</span></div></div>
+</li>
+</ul>
+</li>
+<li><p>Remove Topic Subscription</p>
+<ul>
+<li><p>Remove the code for topic subscription (since QuickStart service is publish only and doesn’t allow subscriptions).  We are going to comment out this section to make it easy to add back in.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_5')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_5" class="lang-c hljs cpp">  <span class="hljs-comment">/* Subscribe to topics when session is not stored by the server       */</span>
+      <span class="hljs-comment">/* if ( (gUiConnFlag == 1) &amp;&amp; (0 == lRetVal) )
+      {
+          uint8_t subIndex;
+          MQTTClient_SubscribeParams_t subscriptionInfo[SUBSCRIPTION_TOPIC_COUNT];
+
+          for( subIndex = 0; subIndex &lt; SUBSCRIPTION_TOPIC_COUNT; subIndex++ )
+          {
+              subscriptionInfo[subIndex].topic = topic[subIndex];
+              subscriptionInfo[subIndex].qos = qos[subIndex];
+          }
+
+          if (MQTTClient_subscribe(gMqttClient , subscriptionInfo, SUBSCRIPTION_TOPIC_COUNT) &lt; 0)
+          {
+              UART_PRINT("\n\r Subscription Error \n\r");
+              MQTTClient_disconnect(gMqttClient);
+              gUiConnFlag = 0;
+          }
+          else
+          {
+              for (iCount = 0; iCount &lt; SUBSCRIPTION_TOPIC_COUNT; iCount++)
+              {
+                  UART_PRINT("Client subscribed on %s\n\r,", topic[iCount]);
+              }
+          }
+  }*/</span>
+</code></pre><span class="code-title"><p><strong>mqtt_client_app.c :: MqttClient_start() commented out</strong></p>
+</span></div></div>
+</li>
+</ul>
+</li>
+<li><p>Configure the Client ID</p>
+<ul>
+<li>First, change the size of the <code>ClientID</code> in the global variable section.<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_6')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_6" class="lang-c hljs cpp">      <span class="hljs-comment">/* Client ID                                                                  */</span>
+      <span class="hljs-comment">/* If ClientId isn't set, the MAC address of the device will be copied into   */</span>
+      <span class="hljs-comment">/* the ClientID parameter.                                                    */</span>
+      <span class="hljs-keyword">char</span> ClientId[<span class="hljs-number">64</span>] = {<span class="hljs-string">'\0'</span>};
+</code></pre><span class="code-title"><p><strong>mqtt_client_app.c :: GLOBAL VARIABLE</strong></p>
+</span></div></div>
+</li>
+<li><p>Then, remove the existing <code>SetClientIdNamefromMacAddress()</code> function and add our modified version to work with IBM.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_7')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_7" class="lang-c hljs cpp">      <span class="hljs-comment">//SetClientIdNamefromMacAddress(macAddress);</span>
+      <span class="hljs-comment">// Format ClientID, using MAC address</span>
+      <span class="hljs-built_in">sprintf</span>(ClientId, <span class="hljs-string">"d:quickstart:ti-simplelink:%02x%02x%02x%02x%02x%02x"</span>,
+       macAddress[<span class="hljs-number">0</span>],
+       macAddress[<span class="hljs-number">1</span>],
+       macAddress[<span class="hljs-number">2</span>],
+       macAddress[<span class="hljs-number">3</span>],
+       macAddress[<span class="hljs-number">4</span>],
+       macAddress[<span class="hljs-number">5</span>]);
+
+     UART_PRINT(<span class="hljs-string">"\t MQTT ClientId: %s"</span>, ClientId);
+     UART_PRINT(lineBreak);
+
+      <span class="hljs-keyword">return</span> ret;
+</code></pre><span class="code-title"><p><strong>mqtt_client_app.c :: DisplayAppBanner()</strong></p>
+</span></div></div>
+</li>
+<li>Finally, we'll add an include for <code>stdio.h</code> to be able to use <code>sprintf()</code>.<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_8')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_8" class="lang-c hljs cpp">      <span class="hljs-comment">/* Standard includes                                                          */</span>
+      <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdlib.h&gt;</span>
+      <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdio.h&gt;</span>
+</code></pre><span class="code-title"><p><strong>mqtt_client_app.c :: Standard includes</strong></p>
+</span></div></div>
+</li>
+</ul>
+</li>
+<li><p>Configure the message</p>
+<ul>
+<li><p>We’ll send a JSON payload of the LaunchPad button state (SW2) which we will toggle each time the button is pressed.  We also need to send the message at <code>MQTT_QOS_0</code>.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_9')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_9" class="lang-c hljs cpp">  <span class="hljs-keyword">for</span> (;;)
+  {
+      <span class="hljs-comment">/* waiting for signals                                                */</span>
+      mq_receive(g_PBQueue, (<span class="hljs-keyword">char</span>*) &amp;queueElemRecv, <span class="hljs-keyword">sizeof</span>(<span class="hljs-keyword">struct</span> msgQueue), NULL);
+
+      <span class="hljs-keyword">switch</span> (queueElemRecv.event)
+      {
+          <span class="hljs-keyword">static</span> <span class="hljs-keyword">int</span> buttonToggle = <span class="hljs-number">0</span>;
+
+          <span class="hljs-keyword">case</span> PUBLISH_PUSH_BUTTON_PRESSED:
+
+              buttonToggle = !buttonToggle;
+              <span class="hljs-built_in">sprintf</span>(publish_data, (<span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span> *)<span class="hljs-string">"{\"d\":{\"button\":%d}}"</span>, buttonToggle);
+
+              <span class="hljs-comment">/* send publish message */</span>
+              lRetVal = MQTTClient_publish(gMqttClient, (<span class="hljs-keyword">char</span>*) publish_topic, <span class="hljs-built_in">strlen</span>((<span class="hljs-keyword">char</span>*)publish_topic), (<span class="hljs-keyword">char</span>*)publish_data, <span class="hljs-built_in">strlen</span>((<span class="hljs-keyword">char</span>*) publish_data), MQTT_QOS_0 | MQTT_PUBLISH_RETAIN );
+
+              <span class="hljs-comment">/* send publish message                                       */</span>
+             <span class="hljs-comment">// lRetVal = MQTTClient_publish(gMqttClient, (char*) publish_topic, strlen((char*)publish_topic), (char*)publish_data, strlen((char*) publish_data), MQTT_QOS_2 | ((RETAIN_ENABLE)?MQTT_PUBLISH_RETAIN:0) );</span>
+
+              UART_PRINT(<span class="hljs-string">"\n\r CC3200 Publishes the following message \n\r"</span>);
+              UART_PRINT(<span class="hljs-string">"Topic: %s\n\r"</span>, publish_topic);
+              UART_PRINT(<span class="hljs-string">"Data: %s\n\r"</span>, publish_data);
+</code></pre><span class="code-title"><p><strong>mqtt_client_app.c :: MqttClient()</strong></p>
+</span></div></div>
+</li>
+</ul>
+</li>
+</ol>
+<h1 id="task-3-rebuild-and-run">Task 3: Rebuild and Run</h1>
+<ol>
+<li><p>Rebuild the MQTT application with these changes and reload/run the application.  You should see the following on the serial console.
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/serialterminal1.png" alt="Serial Terminal 1" class="img-responsive"></div><p></p>
+</li>
+<li><p>Each time the User button (SW2) is pressed, a message with the button state will be sent.
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/serialterminal2.png" alt="Serial Terminal 2" class="img-responsive"></div><p></p>
+</li>
+<li><p>Visualizing the data using IBM QuickStart</p>
+<ul>
+<li>Now connect to IBM QuickStart to view the data by navigating to this link in your web browser: <a href="https://quickstart.internetofthings.ibmcloud.com/">https://quickstart.internetofthings.ibmcloud.com/</a></li>
+<li>Use the MAC address of the LaunchPad as shown on the serial console to see the data! You will need to remove the colons (:) from the MAC address
+<div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ibm.png" alt="IBM" class="img-responsive"></div></li>
+</ul>
+</li>
+</ol>
+<p>Congratulations! Your SimpleLink MCU Platform CC3220 Wi-Fi LaunchPad is now connected to the IBM Watson Platform!</p>
+<div align="center" style="margin-top: 4em; font-size: smaller;">
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="../../web_support/cc_license_icon.png"></a><br>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.</div>
+
+</div><div class="col-xs-4 col-sm-2 sidebar-offcanvas bs-docs-sidebar hidden-print" id="sidebar-overview"><ul class="nav nav-stacked fixed" id="sidebar"><li><a href="#introduction">Introduction</a></li><li><a href="#prerequisites">Prerequisites</a><ul class="nav nav-stacked"><li><a href="#recommended-reading">Recommended Reading</a></li><li><a href="#software">Software</a></li><li><a href="#hardware">Hardware</a></li></ul></li><li><a href="#task-1-setup">Task 1: Setup</a></li><li><a href="#task-2-configure-modify-mqtt-client-example">Task 2: Configure/modify MQTT Client example</a></li><li><a href="#task-3-rebuild-and-run">Task 3: Rebuild and Run</a></li></ul></div></div></div></div>
+
+
+
+
+<link rel="stylesheet" href="../../web_support/highlight/styles/zenburn.css">
+<script src="../../web_support/strapdown/vendor/jquery-1.11.2.min.js"></script>
+<script src="../../web_support/strapdown/vendor/bootstrap.min.js"></script>
+<script src="../../web_support/highlight/highlight.pack.js"></script>
+<script type="text/javascript">document.isPreRendered = true;</script><script src="../../web_support/strapdown/v/0.2/strapdown.js"></script>      <div class="modal" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">        <div class="vertical-alignment-helper">          <div class="modal-dialog vertical-align-center">             <div class="modal-dialog">               <div class="modal-content" style="margin-left: auto;margin-right: auto;">                 <div class="modal-body">                   <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>                   <img src="" class="imagepreview img-responsive">                 </div>              </div>            </div>          </div>        </div>      </div>
+
+
+</body></html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>Provisioning: Connecting SimpleLink™ Wi-Fi® Technology to a Network</title>
+<link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/ubuntu-regular-woff.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/glyphicons-halflings-regular.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/united2.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/bootstrap-responsive.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/strapdown.css"><link rel="shortcut icon" type="image/x-icon" href="../../.metadata/favicon.ico"></head>
+
+<!-- START PRE -->
+
+
+
+
+
+
+<!-- END PRE -->
+
+<body style=""><div class="container"><nav class="navbar navbar-default navbar-static-top"><div class="container-fluid"> <div class="navbar-header">  <div id="headline" class="navbar-brand">Provisioning: Connecting SimpleLink™ Wi-Fi® Technology to a Network</div> </div> </div></nav><div class="container"><div class="row row-offcanvas row-offcanvas-left"><div class="col-xs-12 col-sm-9" id="content"><h1 id="introduction">Introduction</h1>
+<p>In this lab, we will learn the basics of provisioning and review the provisioning methods available for the SimpleLink™ Wi-Fi® CC3220 wireless microcontroller and CC3120 wireless network processor. We will build and run the Provisioning example in the SimpleLink CC3220 SDK to demonstrate the use of each provisioning method and how easily it can be embedded into a wireless application.</p>
+<p>The lab contain several tasks:</p>
+<p><strong>Task 1</strong>: Download the Mobile App</p>
+<p><strong>Task 2</strong>: Build and Load the Example</p>
+<p><strong>Task 3</strong>: Connect with AP Provisioning</p>
+<p><strong>Task 4</strong>: Connect with SmartConfig™</p>
+<p>At the end of this training, you will</p>
+<ul>
+<li>Have a high-level understanding of various methods for provisioning</li>
+<li>Have an understanding of the basic code flow for the provisioning process</li>
+<li>Be familiar with provisioning related API</li>
+<li>Be able to use Code Composer Studio (CCS) to compile, build, and execute the SimpleLink Provisioning application on the CC3220 LaunchPad</li>
+<li>Be able to run the mobile application provided by TI on Android/iOS to enable the CC3220 to connect to a desired Access Point via AP or SmartConfig Provisioning</li>
+</ul>
+<h1 id="prerequisites">Prerequisites</h1>
+<h2 id="software">Software</h2>
+<ul>
+<li><a href="http://www.ti.com/tool/ccstudio">Code Composer Studio</a> v7.4 or later<ul>
+<li>Must have SimpleLink CC3xxx Wireless support</li>
+<li>Make sure that CCS is using the latest updates: <strong>Help → Check for Updates</strong></li>
+</ul>
+</li>
+<li><a href="http://www.ti.com/tool/simplelink-cc3220-sdk">CC3220 SDK v1.60.00.04</a> or later</li>
+<li><a href="http://www.ti.com/tool/UNIFLASH">UniFlash</a> v4.2.1.15 or later.</li>
+<li>Terminal emulator program such as TeraTerm or PuTTY</li>
+</ul>
+<h2 id="hardware">Hardware</h2>
+<ul>
+<li>CC3220S or CC3220SF LaunchPad (<a href="http://www.ti.com/tool/cc3220s-launchxl">CC3220S-LAUNCHXL</a> or <a href="http://www.ti.com/tool/cc3220sf-launchxl">CC3220SF-LAUNCHXL</a>)</li>
+<li>1x Micro-USB cable (included with LaunchPad/BoosterPack)</li>
+<li>802.11b/g/n (2.4-GHz) Wireless Access Point (AP)</li>
+</ul>
+<h1 id="provisioning-overview">Provisioning Overview</h1>
+<p>Wi-Fi Provisioning is the process of connecting a Wi-Fi device (station) to a Wi-Fi network (access point). The provisioning process involves loading the station with the network name (often referred to as SSID) and its security credentials.  For networks with personal Wi-Fi security, loading security credentials simply involves typing in a pre-defined password. In this lab, we will focus on personal Wi-Fi security networks and how a user can load an IoT Wi-Fi station with the network name and password.</p>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Note
+</span></h4>
+<p>The Wi-Fi security standard distinguishes between personal security (mostly used in homes and businesses) and enterprise security (used in large offices and campuses). Provisioning a station for a network with enterprise security usually involves installing certificates, which are used to verify the integrity of the station and the network by interaction with a security server that is managed by the IT department. This will not be covered in this lab.</p>
+</div>
+<h2 id="motivation-for-built-in-provisioning-features">Motivation for Built-in Provisioning Features</h2>
+<p>IoT Wi-Fi stations are typically headless devices, meaning that they lack a user interface (i.e. keyboard, display, etc.) for providing the network information directly to the station. These headless devices need alternate methods to obtain a network name and password from a user. Multiple solutions for provisioning headless devices have been developed to address this challenge. The SimpleLink Wi-Fi CC3120/CC3220 Internet-on-a-chip family of solutions offers built-in Wi-Fi provisioning capabilities, which enable end users to easily configure their IoT devices wirelessly from smartphones and tablets.</p>
+<h2 id="simplelink-wi-fi-family-provisioning-methods">SimpleLink Wi-Fi Family Provisioning Methods</h2>
+<p>The SimpleLink Wi-Fi platform supports a variety of provisioning methods to ensure every application has a great user experience:</p>
+<ul>
+<li><p>Access Point (AP) - Access Point provisioning is the most common provisioning method. During AP provisioning, an unprovisioned Wi-Fi device temporarily operates as an AP. This allows a device such as a smartphone or tablet to connect to it over Wi-Fi and transmit the network information for the desired network connection.</p>
+</li>
+<li><p>SmartConfig (SC) - SmartConfig is a TI proprietary provisioning method that uses a smartphone or tablet to broadcast network credentials to a TI Wi-Fi device. The unprovisioned device can scan for SmartConfig broadcasts while operating in station mode or access point mode.</p>
+</li>
+<li><p>External Configuration - External configuration allows for alternate provisioning methods to be managed at the host level (such as WAC - an Apple MFi licensed technology).</p>
+</li>
+<li><p>Wireless Protected Set-up (WPS) - Certain APs that support WPS allow Wi-Fi devices to establish a connection during a brief time period, upon pressing a button. This method is not recommended due to its security limitations.</p>
+</li>
+</ul>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Note
+</span></h4>
+<p>The SimpleLink Wi-Fi CC3120 wireless network processor and CC3220 wireless microcontroller allow multiple provisioning methods to be used simultaneously to provide flexibility in the provisioning process. The following combinations of provisioning methods are supported:</p>
+<ul>
+<li>AP + SC</li>
+<li>AP + SC + External Configuration.</li>
+</ul>
+</div>
+<h2 id="general-provisioning-flow-diagram">General Provisioning Flow Diagram</h2>
+<p>A general flow diagram of the provisioning process for the SimpleLink Wi-Fi solution can be found below. The device will first enter the configuration state, where it will wait to receive the network's parameters. After receiving the parameters, the device will then attempt to connect to the network and provide feedback to the user upon success.
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/basic_provisioning_flow.png" alt="Provisioning Flow" class="img-responsive"></div><p></p>
+<h2 id="ap-provisioning-flow">AP Provisioning Flow</h2>
+<p>The first step of AP provisioning is for the SimpleLink Wi-Fi solution to start as an AP with a predefined network name. In the configuration stage, a user can connect to the SimpleLink AP with a dedicated provisioning application to configure the wireless network parameters through an HTTP client/server relationship. Once received, the device will store the information in a profile and move to the confirmation stage. In the confirmation stage, the device will connect to the network, obtain an IP address, and then wait to perform a handshake over HTTP with the mobile application. The provisioning process succeeds after the handshake is complete.
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ap_provisioning_flow.png" alt="AP Provisioning" class="img-responsive"></div><p></p>
+<h2 id="smartconfig-provisioning-flow">SmartConfig Provisioning Flow</h2>
+<p>SmartConfig is a TI proprietary provisioning method that uses a mobile application to broadcast network credentials to an unprovisioned device. During SmartConfig, the SimpleLink Wi-Fi solution can be in either STA or AP mode while scanning for SmartConfig data broadcasts. SmartConfig allows a user to broadcast the network parameters of the network that the mobile device is currently connected to. This can save time by eliminating the need to switch the mobile device's Wi-Fi connection to a network created by the SimpleLink Wi-Fi solution. The complete flow of successful SmartConfig Provisioning can be found below.</p>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Note
+</span></h4>
+<p>The SmartConfig provisioning mode does not support wireless access points that are MIMO devices.</p>
+</div>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/smartconfig_provisioning_flow.png" alt="SmartConfig Provisioning" class="img-responsive"></div><p></p>
+<h2 id="external-configuration-wac-provisioning-flow">External Configuration: WAC Provisioning Flow</h2>
+<p>The external configuration flow is different from AP and SmartConfig provisioning because it is managed at the host level instead of being managed by the SimpleLink Wi-Fi Network Processor. When the host identifies that a user has started the provisioning process through external configuration, it must order the networking subsystem to stop the internal provisioning process. Once stopped, the host can continue with its own provisioning process.
+One specific type of external configuration is WAC. This is an MFi licensed technology that is designed for MFi accessories. Detailed information about WAC is available to Apple MFi Development and Manufacturing licensees. The overall flow of WAC provisioning can be found below.
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/wac_provisioning_flow.png" alt="WAC Provisioning" class="img-responsive"></div><p></p>
+<h2 id="host-driver-provisioning-api-and-events">Host Driver Provisioning API and Events</h2>
+<h6 id="api">API</h6>
+<p>The host driver API command used to initiate the provisioning process is <code>sl_WlanProvisioning</code>.</p>
+<div class="panel-group">
+  <div class="panel panel-info">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle collapsed" data-toggle="collapse" href="#expandable_-expand-sl_wlanprovisioning-api-details-"><p> Expand <code>sl_WlanProvisioning</code> API details</p>
+</a>
+      </h4>
+    </div>
+    <div id="expandable_-expand-sl_wlanprovisioning-api-details-" class="panel-collapse collapse">
+      <div class="panel-body"><p>This API command has the following key parameters:</p>
+<ul>
+<li><code>ProvisioningCmd</code>: WLAN mode to start CC3x20 device</li>
+<li><code>RequestedRoleAfterSuccess</code>: Desired role (AP or STA) that the device should switch to after provisioning</li>
+<li><code>InactivityTimeoutSec</code>: Time period the system waits before automatically stopping the provisioning process</li>
+<li><code>pSmartConfigKey</code>: SmartConfig key (public key for SmartConfig process)</li>
+<li>Flags - Defines whether to use external confirmation or not</li>
+</ul>
+<p><code>sl_WlanProvisioning</code> returns a <code>STATUS_OK</code> notification upon successful completion, or an error code otherwise.</p>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Note
+</span></h4>
+<p>For complete documentation on the <code>sl_WlanProvisioning</code> API function, refer to the host driver documentation in the SDK (<code>simplelink_cc32xx_sdk_X_XX_XX_XX/docs/wifi_host_driver_api/index.html</code>)</p>
+</div>
+</div>
+    </div>
+  </div>
+</div><h6 id="events">Events</h6>
+<p>The Provisioning Status Event is used to provide the application with feedback on the provisioning process and state.</p>
+<div class="panel-group">
+  <div class="panel panel-info">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle collapsed" data-toggle="collapse" href="#expandable_-expand-for-details-on-the-provisioning-status-event-"><p> Expand for details on the Provisioning Status Event</p>
+</a>
+      </h4>
+    </div>
+    <div id="expandable_-expand-for-details-on-the-provisioning-status-event-" class="panel-collapse collapse">
+      <div class="panel-body"><p>There are the following parameters for the Provisioning Status Event:</p>
+<ul>
+<li><code>Status</code>: A status can be one of many options related to the success or error with provisioning</li>
+<li><code>Role</code>: The active role (AP/STA) after the provisioning process ended</li>
+<li><code>WlanStatus</code>: If the active role is STA, this parameter will show the WLAN connection status after provisioning has ended</li>
+<li><code>SsidLen</code>: If <code>WlanStatus</code> is connected, this parameter will provide the length of the SSID for the AP connection</li>
+<li><code>Ssid</code>: If <code>WlanStatus</code> is connected, this parameter will give the connection SSID</li>
+</ul>
+<p>Additionally, as part of the provisioning process the following events may occur:</p>
+<ol>
+<li>Provisioning Profile-Added Event - Occurs when a profile is successfully added</li>
+<li>Reset Request Event - The device requires a restart</li>
+</ol>
+</div>
+    </div>
+  </div>
+</div><p>More detail regarding the API and Events can be found in the <a href="http://www.ti.com/lit/swra513">Provisioning Application Note</a> for the CC3120/CC3220.</p>
+<h1 id="task-1-download-the-mobile-app">Task 1: Download the Mobile App</h1>
+<p>The first step in this lab is to download the SimpleLink Wi-Fi Starter Pro Mobile application for your Android or iOS device. The SimpleLink Wi-Fi Starter Pro application will be used to communicate network information to SimpleLink Wi-Fi family devices and to detect SimpleLink Wi-Fi family devices connected to the network.</p>
+<p><a href="http://www.ti.com/tool/wifistarterpro">http://www.ti.com/tool/wifistarterpro</a></p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/app_stores_resized.png" alt="App Stores" class="img-responsive"></div><p></p>
+<h1 id="task-2-build-and-load-the-example">Task 2: Build and Load the Example</h1>
+<ol>
+<li>In CCS, go to the menu <strong>Project → Import CCS Projects...</strong></li>
+<li><p>Browse to the SDK on your local hard drive and select the provisioning example: <code>simplelink_cc32xx_sdk_x_xx_xx_xx\examples\rtos\CC3220SF_LAUNCHXL\demos\provisioning</code></p>
+<ul>
+<li>Be sure you select your desired project "flavor" (TI-RTOS, Free-RTOS, CCS, GCC, etc.)</li>
+<li><p>We will be using the TI-RTOS CCS example for this lab: <code>provisioning_CC3220SF_LAUNCHXL_tirtos_ccs</code></p>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">CC3220S LaunchPad
+</span></h4>
+<p>If you are using a CC3220S LaunchPad, assume all given folder and code instructions can be changed from <code>CC3220SF</code> to <code>CC3220S</code>. For example, here you should import the <code>provisioning_CC3220S_LAUNCHXL_tirtos_ccs</code> example.</p>
+</div>
+</li>
+</ul>
+</li>
+<li><p>Build the project by selecting <strong>Build Project</strong> from the Project menu or right-clicking the name of the project. It may take a couple minutes to build.</p>
+</li>
+</ol>
+<h2 id="flash-using-uniflash-imagecreator">Flash using UniFlash ImageCreator</h2>
+<p>The application should be run in standalone mode by loading the application to the serial flash as shown in <strong>section 2.4</strong> of the <a href="http://www.ti.com/lit/swru461">SimpleLink Wi-Fi CC3220 Getting Started Guide</a>. When loading the MCU image to the CC3220 LaunchPad, use the binary that was generated when you built the project in your CCS workspace.</p>
+<p>In addition to the "dummy" certificate chain, you must add the <code>dummy-root-ca-cert-key</code> as a user file in order to connect to the internal HTTPS server. This file is needed for the SSL key exchange to create the secure connection. This is shown in detail in steps 1-4 of <strong>section 2.4.1</strong> of the <a href="http://www.ti.com/lit/swru461">SimpleLink Wi-Fi CC3220 Getting Started Guide</a>.</p>
+<p>When you have all the files added correctly, your user file view in UniFlash ImageCreator will look as follows:
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/imagecreator.png" alt="UserFiles" class="img-responsive"></div><p></p>
+<h2 id="open-a-uart-terminal">Open a UART terminal</h2>
+<p>Open up a terminal on your device's COM port. We want to use the XSD110 Class Application/User UART port with the following parameters:</p>
+<div class="alert alert-warning "><p> <strong>UART Configuration</strong><br>
+Baud rate: 115200<br>
+Data: 8 bit<br>
+Parity: None<br>
+Stop: 1 bit<br>
+Flow control: None</p>
+</div>
+<h1 id="task-3-connect-with-ap-provisioning">Task 3: Connect with AP Provisioning</h1>
+<p>We will first connect the SimpleLink CC3x20 device to the network using AP Provisioning.</p>
+<h2 id="start-the-provisioning-application">Start the Provisioning Application</h2>
+<p>Once the program is loaded on the device and the terminal is connected, press the Reset button on the LaunchPad to run the flashed application.</p>
+<p>If successful, the terminal emulation program should output the text below. This indicates that the device has entered the provisioning state for the mode shown (in this case mode = 2, which is AP + SmartConfig).
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/provisioning_terminal_default.png" alt="Terminal Output Start" class="img-responsive"></div><p></p>
+<h2 id="configure-the-mobile-app-for-ap-provisioning">Configure the Mobile App for AP Provisioning</h2>
+<p>Now that the device has started and is ready to be provisioned, open the SimpleLink Wi-Fi Starter Pro App on your iOS or Android device. After installing the mobile application, AP Provisioning should be enabled by default. To make sure that AP Provisioning is enabled, follow these steps:</p>
+<ol>
+<li>Select the <strong>Settings</strong> tab in the SimpleLink Wi-Fi Starter Pro App</li>
+<li>Make sure <strong>Enable Smart Config</strong> is OFF</li>
+<li>Select the <strong>Provisioning</strong> tab to return to the Configuration Page</li>
+</ol>
+<p>Your settings should look as follows:
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/app_settings_page.png" alt="Starter Pro Settings Page" class="img-responsive"></div><p></p>
+<h2 id="connect-to-the-simplelink-wi-fi-ap">Connect to the SimpleLink Wi-Fi AP</h2>
+<p>Once you are back on the Configuration Page, select <strong>Device to Configure</strong> and choose your device. You will be able to identify your device based on the default SSID, which is <strong>mysimplelink-xxxxxx</strong> (where <strong>xxxxxx</strong> is the last 6 characters of the device MAC address). Optionally, you can also give your device a name to use when it joins the network.</p>
+<div class="bs-callout bs-callout-danger "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Unable to find the device version? Check your certificates!
+</span></h4>
+<p>Do you have <code>dummy-root-ca-cert-key</code> flashed to your device? If you're unable to connect, return to task 2 (Flashing using UniFlash ImageCreator) and be sure that you have not forgotten this certificate key.</p>
+</div>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/app_config_page.png" alt="Device Config" class="img-responsive"></div><p></p>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Note
+</span></h4>
+<p>On iOS, a message will prompt you to connect to the desired AP using the <strong>Settings App</strong>. Navigate to the <strong>Settings App</strong>, choose your device from the network list, then re-open the SimpleLink Wi-Fi Starter Pro App to continue.
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/app_device_config_ios_settings_combined.png" alt="Device Config iOS" class="img-responsive"></div><p></p>
+</div>
+<h2 id="enter-the-network-credentials">Enter the Network Credentials</h2>
+<p>Fill-in the network credentials for the 802.11 b/g/n wireless AP you want to connect your device to by selecting the SSID in the <strong>Wi-Fi Network</strong> field and entering the <strong>Network Password</strong>.
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/select_network_and_password.png" alt="Network Configuration" class="img-responsive"></div><p></p>
+<p>Once the credentials are entered, press <strong>START CONFIGURATION</strong> to begin AP Provisioning. You can verify that the provisioning process succeeded by checking the terminal output or the mobile application notification.
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/start_configuration_and_verify.png" alt="Start and Verify" class="img-responsive"></div><p></p>
+<p>The terminal output will show that the profile is added, that the device connected to the network, and that an IP was acquired by the device when provisioning ends successfully.
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/provisioning_succeeded_terminal.png" alt="Success Terminal" class="img-responsive"></div><p></p>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Note
+</span></h4>
+<p>Provisioning results in network credentials being saved to the serial flash and stored as a network profile. A device reset will allow the SimpleLink Wi-Fi device to attempt to reconnect to any stored profiles before starting the provisioning process if the Auto Connect policy is enabled.</p>
+</div>
+<h1 id="task-4-connect-with-smartconfig">Task 4: Connect with SmartConfig</h1>
+<p>Now we will repeat the provisioning process with SmartConfig. This will require removing any existing profiles on the serial flash so that the SimpleLink Wi-Fi device does not automatically connect to a network and skip the provisioning process.</p>
+<h2 id="restart-the-provisioning-application">Restart the Provisioning Application</h2>
+<p>After successful AP Provisioning, you can reset the SimpleLink Wi-Fi solution by performing the following actions:</p>
+<ul>
+<li>Disconnect the terminal application</li>
+<li>Repeat the UniFlash step of <strong>Task 2</strong> to clear the serial flash contents and re-load the application/user files</li>
+<li>Reconnect the terminal application and restart the device to run the application again</li>
+</ul>
+<h2 id="enable-smartconfig-in-the-mobile-app">Enable SmartConfig in the Mobile App</h2>
+<p>Open the SimpleLink Wi-Fi Starter Pro App on your iOS or Android device and select the <strong>Settings</strong> tab. Enable SmartConfig by setting <strong>Enable Smart Config</strong> to <strong>ON</strong>, then return to the <strong>Provisioning</strong> tab.
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/settings_smartconfig_enabled.png" alt="Settings SmartConfig" class="img-responsive"></div><p></p>
+<h2 id="enter-the-network-password-and-start-smartconfig">Enter the Network Password and Start SmartConfig</h2>
+<p>Provide the network credentials for the 802.11 b/g/n (non-MIMO) wireless AP by selecting your SSID from the <strong>Network Name</strong> field and entering the password in the <strong>Network Password</strong> field. Then press the <strong>Start Configuration</strong> button to begin SmartConfig. You can verify successful provisioning by checking the terminal output or the mobile application notification.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/smartconfig_configuration_and_success.png" alt="App Configuration SmartConfig" class="img-responsive"></div><p></p>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Note
+</span></h4>
+<p>The <strong>Device to Configure</strong> field is not displayed on the Configuration page since the CC3x20 device will be automatically detected and receive the SmartConfig broadcast.</p>
+</div>
+<h1 id="references">References</h1>
+<p>To learn more about the provisioning process or to get additional assistance during development, please refer to the following resources:</p>
+<ul>
+<li><a href="http://www.ti.com/lit/swry011"><strong>Provisioning White Paper</strong></a></li>
+<li><a href="http://www.ti.com/lit/swra513"><strong>Provisioning Application Note</strong></a></li>
+<li><a href="http://www.ti.com/lit/swru472"><strong>Provisioning for Mobile Applications</strong></a></li>
+<li><a href="http://www.ti.com/lit/swru455a"><strong>CC3x20 NWP Programmer's Guide</strong></a></li>
+</ul>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Technical support
+</span></h4>
+<p>For any questions you might have, please search on the <a href="https://e2e.ti.com/support/wireless_connectivity/simplelink_wifi_cc31xx_cc32xx/">TI SimpleLink Wi-Fi E2E Forum</a></p>
+</div>
+<div align="center" style="margin-top: 4em; font-size: smaller;">
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="../../web_support/cc_license_icon.png"></a><br>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.</div>
+
+</div><div class="col-xs-4 col-sm-2 sidebar-offcanvas bs-docs-sidebar hidden-print" id="sidebar-overview"><ul class="nav nav-stacked fixed" id="sidebar"><li><a href="#introduction">Introduction</a></li><li><a href="#prerequisites">Prerequisites</a><ul class="nav nav-stacked"><li><a href="#software">Software</a></li><li><a href="#hardware">Hardware</a></li></ul></li><li><a href="#provisioning-overview">Provisioning Overview</a><ul class="nav nav-stacked"><li><a href="#motivation-for-built-in-provisioning-features">Motivation for Built-in Provisioning Features</a></li><li><a href="#simplelink-wi-fi-family-provisioning-methods">SimpleLink Wi-Fi Family Provisioning Methods</a></li><li><a href="#general-provisioning-flow-diagram">General Provisioning Flow Diagram</a></li><li><a href="#ap-provisioning-flow">AP Provisioning Flow</a></li><li><a href="#smartconfig-provisioning-flow">SmartConfig Provisioning Flow</a></li><li><a href="#external-configuration-wac-provisioning-flow">External Configuration: WAC Provisioning Flow</a></li><li><a href="#host-driver-provisioning-api-and-events">Host Driver Provisioning API and Events</a><ul class="nav nav-stacked"><ul class="nav nav-stacked"><ul class="nav nav-stacked"><ul class="nav nav-stacked"><li><a href="#api">API</a></li><li><a href="#events">Events</a></li></ul></ul></ul></ul></li></ul></li><li><a href="#task-1-download-the-mobile-app">Task 1: Download the Mobile App</a></li><li><a href="#task-2-build-and-load-the-example">Task 2: Build and Load the Example</a><ul class="nav nav-stacked"><li><a href="#flash-using-uniflash-imagecreator">Flash using UniFlash ImageCreator</a></li><li><a href="#open-a-uart-terminal">Open a UART terminal</a></li></ul></li><li><a href="#task-3-connect-with-ap-provisioning">Task 3: Connect with AP Provisioning</a><ul class="nav nav-stacked"><li><a href="#start-the-provisioning-application">Start the Provisioning Application</a></li><li><a href="#configure-the-mobile-app-for-ap-provisioning">Configure the Mobile App for AP Provisioning</a></li><li><a href="#connect-to-the-simplelink-wi-fi-ap">Connect to the SimpleLink Wi-Fi AP</a></li><li><a href="#enter-the-network-credentials">Enter the Network Credentials</a></li></ul></li><li><a href="#task-4-connect-with-smartconfig">Task 4: Connect with SmartConfig</a><ul class="nav nav-stacked"><li><a href="#restart-the-provisioning-application">Restart the Provisioning Application</a></li><li><a href="#enable-smartconfig-in-the-mobile-app">Enable SmartConfig in the Mobile App</a></li><li><a href="#enter-the-network-password-and-start-smartconfig">Enter the Network Password and Start SmartConfig</a></li></ul></li><li><a href="#references">References</a></li></ul></div></div></div></div>
+
+<link rel="stylesheet" href="../../web_support/highlight/styles/zenburn.css">
+<script src="../../web_support/strapdown/vendor/jquery-1.11.2.min.js"></script>
+<script src="../../web_support/strapdown/vendor/bootstrap.min.js"></script>
+<script src="../../web_support/highlight/highlight.pack.js"></script>
+<script type="text/javascript">document.isPreRendered = true;</script><script src="../../web_support/strapdown/v/0.2/strapdown.js"></script>      <div class="modal" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">        <div class="vertical-alignment-helper">          <div class="modal-dialog vertical-align-center">             <div class="modal-dialog">               <div class="modal-content" style="margin-left: auto;margin-right: auto;">                 <div class="modal-body">                   <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>                   <img src="" class="imagepreview img-responsive">                 </div>              </div>            </div>          </div>        </div>      </div>
+
+
+</body></html>

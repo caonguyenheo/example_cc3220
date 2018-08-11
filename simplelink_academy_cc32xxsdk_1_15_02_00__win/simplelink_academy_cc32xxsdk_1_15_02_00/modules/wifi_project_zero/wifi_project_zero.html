@@ -1,0 +1,344 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>Project Zero: Getting Started with the Network Terminal Example</title>
+<link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/ubuntu-regular-woff.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/glyphicons-halflings-regular.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/united2.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/bootstrap-responsive.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/strapdown.css"><link rel="shortcut icon" type="image/x-icon" href="../../.metadata/favicon.ico"></head>
+
+<!-- START PRE -->
+
+
+
+
+
+
+<!-- END PRE -->
+
+<body style=""><div class="container"><nav class="navbar navbar-default navbar-static-top"><div class="container-fluid"> <div class="navbar-header">  <div id="headline" class="navbar-brand">Project Zero: Getting Started with the Network Terminal Example</div> </div> </div></nav><div class="container"><div class="row row-offcanvas row-offcanvas-left"><div class="col-xs-12 col-sm-9" id="content"><h1 id="introduction">Introduction</h1>
+<p>In this lab, we will use the Network Terminal example in the SimpleLink™ Wi-Fi® CC3220
+Software Development Kit as a tool to learn the flow of a basic Wi-Fi application before we dig into
+the code. The Network Terminal example demonstrates the various range of
+networking capabilities which the SimpleLink Wi-Fi CC3220/CC3120 device family provides.</p>
+<p>The purpose of this lab is to familiarize users with Wi-Fi and tools such as
+Code Composer Studio, by importing existing examples into the IDE and utilizing
+the debugger. The lab contains several tasks:</p>
+<p><strong>Task 1</strong>: Building and loading the Network terminal example</p>
+<p><strong>Task 2</strong>: Get familiar with the Network Terminal commands</p>
+<p><strong>Task 3</strong>: Use commands to demonstrate basic Wi-Fi applications</p>
+<h1 id="prerequisites">Prerequisites</h1>
+<h2 id="recommended-reading">Recommended Reading</h2>
+<ul>
+<li><a href="http://www.ti.com/lit/swru461">SimpleLink Wi-Fi CC3220 Getting Started Guide</a></li>
+</ul>
+<h2 id="software">Software</h2>
+<ul>
+<li><a href="http://www.ti.com/tool/ccstudio">Code Composer Studio</a> v7.4 or later<ul>
+<li>Must have SimpleLink CC3xxx Wireless MCU support</li>
+<li>Make sure that CCS is using the <strong>latest updates</strong>: <em>Help</em> → <em>Check for Updates</em></li>
+</ul>
+</li>
+<li><a href="http://www.ti.com/tool/simplelink-cc3220-sdk">CC3220 SDK v1.60.00.04</a> or later</li>
+<li><a href="http://www.ti.com/tool/UNIFLASH">UniFlash</a> v4.2.1.15 or later.</li>
+<li>Terminal emulator program such as TeraTerm or PuTTY</li>
+</ul>
+<h2 id="hardware">Hardware</h2>
+<ul>
+<li>2x CC3220S or CC3220SF LaunchPads (<a href="http://www.ti.com/tool/cc3220s-launchxl">CC3220S-LAUNCHXL</a> or <a href="http://www.ti.com/tool/cc3220sf-launchxl">CC3220SF-LAUNCHXL</a>)</li>
+<li>2x Micro-USB cable (included with LaunchPad/BoosterPack)</li>
+<li>802.11b/g/n (2.4-GHz) Wireless Access Point (AP)</li>
+</ul>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Note
+</span></h4>
+<p>Some exercises in this lab require two CC3220 LaunchPads. A subset can be
+completed with one LaunchPad. This lab can also be performed with two <a href="http://www.ti.com/tool/MSP-EXP432P401R">MSP432 LaunchPads</a> plus
+<a href="http://www.ti.com/tool/cc3120boost">CC3120 BoosterPacks</a> or a combination of these.</p>
+</div>
+<h1 id="task-1-building-and-loading-the-network-terminal-example">Task 1: Building and loading the Network Terminal example</h1>
+<ol>
+<li>In CCS, open the TI Resource Explorer (<strong>View</strong> → <strong>Resource Explorer</strong>)</li>
+<li><p>Expand the folders as shown to select the <code>network_terminal</code> example, then click the <strong>Import to IDE</strong> icon at the top-right</p>
+<ul>
+<li>Be sure you select your desired project "flavor" (CC3220S-LAUNCHXL, CC3220SF-LAUNCHXL, TI-RTOS, Free-RTOS, CCS, GCC, etc.)</li>
+<li><p>We will be using the TI-RTOS CCS example for this lab: <code>network_terminal_CC3220SF_LAUNCHXL_tirtos_ccs</code></p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/network_terminal_tirex.png" alt="TI Resource Explorer" class="img-responsive"></div><p></p>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">CC3220S LaunchPad
+</span></h4>
+<p>If you are using a CC3220S LaunchPad, assume all given folder and code instructions can be changed from <code>CC3220SF</code> to <code>CC3220S</code>. For example, here you should import the <code>network_terminal_CC3220S_LAUNCHXL_tirtos_ccs</code> example.</p>
+</div>
+</li>
+</ul>
+</li>
+<li><p>Build the project by selecting <strong>Build Project</strong> from the Project menu or
+right-clicking the name of the project. It may take a couple minutes to build.</p>
+</li>
+<li><p>You'll need two devices for some of the lab exercises, so you can grab a partner with a LaunchPad or run both terminals yourself.</p>
+<h4 id="if-you-re-working-with-a-partner-">If you're working with a partner:</h4>
+<p>     <strong>Using CCS Debugger:</strong>
+     Start a Debug session by clicking the green bug in the top menu. Your CC3220 LaunchPad will
+     need to be plugged in.</p>
+<h4 id="if-you-re-flying-solo-">If you're flying solo:</h4>
+<p>     <strong>Flash using UniFlash ImageCreator:</strong>
+     Flash the built MCU image using UniFlash ImageCreator. For step-by-step instructions, see the <a href="http://www.ti.com/lit/swru461">SimpleLink Wi-Fi CC3220 Getting Started Guide</a>.</p>
+</li>
+<li><p>Open a UART terminal (or two) on your device's COM port. We want to use the XSD110 Class
+Application/User UART port with the following parameters:        </p>
+<div class="alert alert-warning "><p> <strong>UART Configuration</strong><br>
+Baud rate: 115200<br>
+Data: 8 bit<br>
+Parity: None<br>
+Stop: 1 bit<br>
+Flow control: None</p>
+</div>
+</li>
+<li><p>If you are using the CCS debugger, click the green arrow in the top menu to start executing your code. If you have flashed the application to the LaunchPads, reset the boards to start executing your code.</p>
+</li>
+</ol>
+<h1 id="task-2-get-familiar-with-the-network-terminal-commands">Task 2: Get familiar with the Network Terminal commands</h1>
+<p>For simplicity, we divide the application's functionality into four different
+silos. Each silo contains several commands accessible by the user via command
+line interface.</p>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Silo</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>WLAN</td>
+<td>Contains link layer functions like scan, connect, etc.</td>
+</tr>
+<tr>
+<td>Socket</td>
+<td>Shows variety of socket API and responsible for sending and receiving data.</td>
+</tr>
+<tr>
+<td>NetApp</td>
+<td>Demonstrates the usage of networking applications.</td>
+</tr>
+<tr>
+<td>Transceiver</td>
+<td>Gives the user a direct interface to the NWP radio for RF tests, raw sockets (L1) and more.</td>
+</tr>
+</tbody>
+</table>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Available commands
+</span></h4>
+<p>You can type <code>help</code> into the terminal at any time to see a complete list of
+available commands.</p>
+</div>
+<h2 id="wlan-commands">WLAN commands</h2>
+<ul>
+<li><code>scan</code>: Retrieves scan results from network processor’s (NWP) scan cache</li>
+<li><code>setpolicy</code>: Defines the device’s scan behavior and starts background scans</li>
+<li><code>wlanconnect</code>: Connects device to an AP</li>
+<li><code>wlandisconnect</code>: Disconnect from AP</li>
+<li><code>wlan_ap_start</code>: Configures the device to operate in AP mode</li>
+<li><code>wlan_ap_stop</code>: Set device in Station mode</li>
+<li><code>createfilter</code>: Creates an RX filter. RX filters are a set of rules and
+actions imposed on each packet received from the air</li>
+<li><code>enablefilter</code>: Enables all defined filters</li>
+<li><code>disablefilter</code>: Disables all defined filters</li>
+<li><code>deletefilter</code>: Deletes all defined filters</li>
+<li><code>enablewowlan</code>: Defines a pattern-based filter, then sends host MCU to Low
+Power Deep Sleep (LPDS). Once the pattern filter triggers, the NWP would wake
+the host MCU from LPDS using host IRQ as a wake up source.</li>
+<li><code>p2pstart</code>: Sets the NWP in discoverable Peer to Peer mode and connects to
+another visible P2P device</li>
+</ul>
+<h2 id="socket-commands">Socket commands</h2>
+<ul>
+<li><code>send</code>: Demonstrates opening a TCP or UDP socket, sending data in packets,
+and closing socket</li>
+<li><code>recv</code>: Demonstrates opening a listening socket, receiving data in packets,
+and closing socket</li>
+</ul>
+<h2 id="netapp-commands">NetApp commands</h2>
+<ul>
+<li><code>ping</code>: Pings specific host name or IP, and prints statistics to terminal</li>
+<li><code>mdnsadvertise</code>: Advertises a service over mDNS</li>
+<li><code>mdnsquery</code>: Runs mDNS query for services over local LAN</li>
+</ul>
+<h2 id="transceiver-commands">Transceiver commands</h2>
+<ul>
+<li><code>radiotool</code>: Starts the Radio Tool. This allows users to run several
+radio-related tests for RX and TX operations</li>
+</ul>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Learn more about the commands
+</span></h4>
+<p>You can learn more about any command and see an example of usage by typing
+<code>[command] -help</code> into the terminal.</p>
+</div>
+<h1 id="task-3-use-commands-to-demonstrate-basic-wi-fi-applications">Task 3: Use commands to demonstrate basic Wi-Fi applications</h1>
+<p>In these exercises, you can grab a partner or flash the same application to both 
+LaunchPads using UniFlash ImageCreator. We will refer to the partners or devices as User 1 and 2.</p>
+<div class="bs-callout bs-callout-danger "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Backspaces
+</span></h4>
+<p>This terminal application does not support backspaces. If you mistype a command, you will have to retry it.</p>
+</div>
+<h3 id="exercise-1">Exercise 1</h3>
+<p><strong>User 1</strong>: Set up your device as an open Access Point. Once a Station connects
+and pings you, send a number of packets to the station and wait for them to be received by the Station. 
+Once the Station has completed and disconnected, set the device to Station mode.
+<br><strong>User 2</strong>: You are acting as a Station. Scan for an AP, and connect to
+User 1's AP. Ping the AP, then listen for incoming packets. Once completed, disconnect from the AP.
+<br><br><i><strong>Hint</strong>: When communicating using sockets, the server must be set up
+before the client.</i></p>
+<div class="panel-group">
+  <div class="panel panel-success">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle collapsed" data-toggle="collapse" href="#expandable_-if-you-get-stuck-see-the-exercise-1-commands-here-"><p> If you get stuck, see the Exercise 1 commands here!</p>
+</a>
+      </h4>
+    </div>
+    <div id="expandable_-if-you-get-stuck-see-the-exercise-1-commands-here-" class="panel-collapse collapse">
+      <div class="panel-body"><p><strong>User 1</strong>: <code>wlan_ap_start -s "cc3220-demo" -t OPEN</code><br>
+<strong>User 2</strong>: <code>scan -n 20</code><br>
+<strong>User 2</strong>: <code>wlanconnect -s "cc3220-demo" -t OPEN</code><br>
+<strong>User 2</strong>: <code>ping -h &lt;server IP address&gt;</code><br>
+<strong>User 1</strong>: <code>send -s -p 5001</code><br>
+<strong>User 2</strong>: <code>recv -c &lt;server IP address&gt; -p 5001</code><br>
+<strong>User 2</strong>: <code>wlandisconnect</code><br>
+<strong>User 1</strong>: <code>wlan_ap_stop</code></p>
+</div>
+    </div>
+  </div>
+</div><p>Congratulations! You just set up your first Wi-Fi Access Point and communicated with a Station.</p>
+<h3 id="exercise-2">Exercise 2</h3>
+<p>Try the same exercise as above, but make User 1's AP a secured network!</p>
+<div class="panel-group">
+  <div class="panel panel-success">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle collapsed" data-toggle="collapse" href="#expandable_-exercise-2-commands-"><p> Exercise 2 commands</p>
+</a>
+      </h4>
+    </div>
+    <div id="expandable_-exercise-2-commands-" class="panel-collapse collapse">
+      <div class="panel-body"><p><strong>User 1</strong>: <code>wlan_ap_start -s "cc3220-demo" -t WPA/WPA2 -p "password"</code><br>
+<strong>User 2</strong>: <code>scan -n 20</code><br>
+<strong>User 2</strong>: <code>wlanconnect -s "cc3220-demo" -t WPA/WPA2 -p "password"</code><br>
+<strong>User 2</strong>: <code>ping -h &lt;server IP address&gt;</code><br>
+<strong>User 1</strong>: <code>send -s -p 5001</code><br>
+<strong>User 2</strong>: <code>recv -c &lt;server IP address&gt; -p 5001</code><br>
+<strong>User 2</strong>: <code>wlandisconnect</code><br>
+<strong>User 1</strong>: <code>wlan_ap_stop</code></p>
+</div>
+    </div>
+  </div>
+</div><h3 id="exercise-3">Exercise 3</h3>
+<p>As a station, connect to an AP with internet access (a hotspot or router, for example). Ping a popular website,
+such as google.com or ti.com. Send 5 Echo-request packets with a 2 second delay
+interval.</p>
+<div class="panel-group">
+  <div class="panel panel-success">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle collapsed" data-toggle="collapse" href="#expandable_-exercise-3-commands-"><p> Exercise 3 commands</p>
+</a>
+      </h4>
+    </div>
+    <div id="expandable_-exercise-3-commands-" class="panel-collapse collapse">
+      <div class="panel-body"><p><code>scan -n 20</code><br>
+<code>wlanconnect -s "cc3220-demo" -t WPA/WPA2 -p "password"</code><br>
+<code>ping -h www.ti.com -c 5 -i 2</code><br></p>
+<p><em>Use your own AP's SSID and password in the wlanconnect command</em></p>
+</div>
+    </div>
+  </div>
+</div><h3 id="exercise-4">Exercise 4</h3>
+<p>Start the Radio tool by calling the <code>radiotool</code> command and run the RX task on
+any channel. RX testing is used for gathering Wi-Fi statistics for a specified channel.</p>
+<p>Take a look at the RX statistics breaking down the traffic the SimpleLink device sees broadcasting on the specific channel (example below). This traffic comes from broadcasting Wi-Fi networks in the area. The RSSI (Received Signal Strength Indicator) histogram shows the power present in a received radio signal, and the rate histogram shows the data rate in Mbps.</p>
+<p>For more details on the Network Terminal radio tool, see the application README.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_1')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_1" class="hljs markdown"><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">***Rx Statistics**</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span>**
+Received Packets: 20266
+Average RSSI for management: -74 Average RSSI for other packets: -83
+
+<span class="hljs-code">    -----------------------   RSSI Histogram   -----------------------</span>
+
+-40dBm to -87dBm (below and above RSSI will appear in the first and last cells)
+
+<span class="hljs-code">           10   20   30   40   50   60   70   80   90   100</span>
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+  -40dBm                                                    (0.06%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+  -49dBm                                                  (1.59%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+  -58dBm                                                  (0.52%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+  -68dBm<span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span>                                   (30.60%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+  -77dBm<span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-emphasis">***</span>                           (46.09%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+  -87dBm<span class="hljs-strong">*****</span><span class="hljs-strong">*****</span>                                        (21.14%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+<span class="hljs-code">              10   20   30   40   50   60   70   80   90   100</span>
+
+<span class="hljs-code">    -----------------------   Rate Histogram   -----------------------</span>
+
+<span class="hljs-code">           10   20   30   40   50   60   70   80   90   100</span>
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+0          *                                                 (3.09%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+1                                                            (0.03%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+2                                                            (0.03%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+3                                                            (0.03%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+4          <span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span>*    (93.70%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+5                                                            (0.86%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+6                                                            (0.03%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+7                                                            (0.06%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+8          *                                                 (2.13%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+9                                                            (0.00%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+10                                                           (0.00%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+11                                                           (0.00%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+12                                                           (0.04%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+13                                                           (0.00%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+14                                                           (0.00%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+15                                                           (0.00%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+16                                                           (0.00%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+17                                                           (0.00%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+18                                                           (0.00%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+19                                                           (0.00%)
+<span class="hljs-code">         |----+----+----+----+----+----+----+----+----+----|</span>
+<span class="hljs-code">              10   20   30   40   50   60   70   80   90   100</span>
+
+<span class="hljs-code">                     The data was sampled during 97337mSec</span>
+<span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-emphasis">*End Rx Statistics*</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span><span class="hljs-strong">*****</span>*
+</code></pre></div></div>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Technical support
+</span></h4>
+<p>For any questions you might have, please search on the
+<a href="https://e2e.ti.com/">TI SimpleLink Wi-Fi E2E Forum</a>.</p>
+</div>
+<div align="center" style="margin-top: 4em; font-size: smaller;">
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="../../web_support/cc_license_icon.png"></a><br>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.</div>
+
+</div><div class="col-xs-4 col-sm-2 sidebar-offcanvas bs-docs-sidebar hidden-print" id="sidebar-overview"><ul class="nav nav-stacked fixed" id="sidebar"><li><a href="#introduction">Introduction</a></li><li><a href="#prerequisites">Prerequisites</a><ul class="nav nav-stacked"><li><a href="#recommended-reading">Recommended Reading</a></li><li><a href="#software">Software</a></li><li><a href="#hardware">Hardware</a></li></ul></li><li><a href="#task-1-building-and-loading-the-network-terminal-example">Task 1: Building and loading the Network Terminal example</a><ul class="nav nav-stacked"><ul class="nav nav-stacked"><ul class="nav nav-stacked"><li><a href="#if-you-re-working-with-a-partner-">If you're working with a partner:</a></li><li><a href="#if-you-re-flying-solo-">If you're flying solo:</a></li></ul></ul></ul></li><li><a href="#task-2-get-familiar-with-the-network-terminal-commands">Task 2: Get familiar with the Network Terminal commands</a><ul class="nav nav-stacked"><li><a href="#wlan-commands">WLAN commands</a></li><li><a href="#socket-commands">Socket commands</a></li><li><a href="#netapp-commands">NetApp commands</a></li><li><a href="#transceiver-commands">Transceiver commands</a></li></ul></li><li><a href="#task-3-use-commands-to-demonstrate-basic-wi-fi-applications">Task 3: Use commands to demonstrate basic Wi-Fi applications</a><ul class="nav nav-stacked"><ul class="nav nav-stacked"><li><a href="#exercise-1">Exercise 1</a></li><li><a href="#exercise-2">Exercise 2</a></li><li><a href="#exercise-3">Exercise 3</a></li><li><a href="#exercise-4">Exercise 4</a></li></ul></ul></li></ul></div></div></div></div>
+
+<link rel="stylesheet" href="../../web_support/highlight/styles/zenburn.css">
+<script src="../../web_support/strapdown/vendor/jquery-1.11.2.min.js"></script>
+<script src="../../web_support/strapdown/vendor/bootstrap.min.js"></script>
+<script src="../../web_support/highlight/highlight.pack.js"></script>
+<script type="text/javascript">document.isPreRendered = true;</script><script src="../../web_support/strapdown/v/0.2/strapdown.js"></script>      <div class="modal" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">        <div class="vertical-alignment-helper">          <div class="modal-dialog vertical-align-center">             <div class="modal-dialog">               <div class="modal-content" style="margin-left: auto;margin-right: auto;">                 <div class="modal-body">                   <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>                   <img src="" class="imagepreview img-responsive">                 </div>              </div>            </div>          </div>        </div>      </div>
+
+
+</body></html>

@@ -1,0 +1,12 @@
+[
+    {
+        "name": "Overview",
+        "resourceType": "file",
+        "fileType": ".html",
+        "location": "../../overview.html",
+        "description": "Introduction and lab overview",
+        "categories": [],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    }
+]

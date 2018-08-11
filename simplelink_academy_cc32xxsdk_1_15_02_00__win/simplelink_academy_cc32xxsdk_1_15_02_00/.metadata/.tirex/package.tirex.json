@@ -1,0 +1,23 @@
+[
+    {
+        "id": "com.ti.SIMPLELINK_ACADEMY_CC32XXSDK",
+        "name": "SimpleLink Academy",
+        "version": "1.15.02.00",
+        "type": "software",
+        "image": "../simplelink_academy_logo.png",
+        "description": "Welcome to the SimpleLink Academy",
+        "supplements": {
+            "packageId": "com.ti.SIMPLELINK_CC32XX_SDK",
+            "semver": "1.60"
+        },
+        "allowPartialDownload": "false",
+        "devices": [
+            "$(macro_devices_all)"
+        ],
+        "devtools": [
+            "$(macro_devtools_all)"
+        ],
+        "metadataVersion": "3.0.0",
+        "location": "../../overview.html"
+    }
+]

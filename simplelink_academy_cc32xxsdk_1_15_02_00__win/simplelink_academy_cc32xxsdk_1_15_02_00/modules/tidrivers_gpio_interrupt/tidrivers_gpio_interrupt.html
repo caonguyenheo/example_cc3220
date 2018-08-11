@@ -1,0 +1,358 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>TI Drivers : GPIO Interrupts</title>
+<link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/ubuntu-regular-woff.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/glyphicons-halflings-regular.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/united2.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/bootstrap-responsive.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/strapdown.css"><link rel="shortcut icon" type="image/x-icon" href="../../.metadata/favicon.ico"></head>
+
+<!-- START PRE -->
+
+
+
+
+
+
+<!-- END PRE -->
+
+<body style=""><div class="container"><nav class="navbar navbar-default navbar-static-top"><div class="container-fluid"> <div class="navbar-header">  <div id="headline" class="navbar-brand">TI Drivers : GPIO Interrupts</div> </div> </div></nav><div class="container"><div class="row row-offcanvas row-offcanvas-left"><div class="col-xs-12 col-sm-9" id="content"><h1 id="-introduction">  Introduction</h1>
+<p>  This workshop is a simple introduction for setting up GPIO interrupts using TI Drivers within the Simplelink™ SDK. We will be leveraging the <code>gpio_interrupt</code> code example provided within the SimpleLink SDK for reference.</p>
+<p>  <strong>Here's what we'll learn:</strong></p>
+<ul>
+<li>Exploring TI Resource Explorer &amp; the SimpleLink SDK to find the <code>gpio interrupt</code> example</li>
+<li>Modify a basic example to add GPIO interrupt capabilities</li>
+</ul>
+<h1 id="-prerequisites">  Prerequisites</h1>
+<h3 id="recommended-material">Recommended material</h3>
+<ul>
+<li><p>We recommend you complete the following exercises before running this training:</p>
+<ul>
+<li><a href="../tidrivers_project_zero/tidrivers_project_zero.html">TI Drivers Project Zero</a></li>
+<li><a href="../tidrivers_project_zero_GUI_jtag_xds/tidrivers_project_zero_GUI_jtag_xds.html">GUI Composer Project Zero</a></li>
+</ul>
+</li>
+<li><p>We will modify the output of these examples to add GPIO interrupts.</p>
+</li>
+</ul>
+<h3 id="software-for-desktop-development">Software for desktop development</h3>
+<p>  This tutorial can be done 100% with a web browser in the cloud.</p>
+<ul>
+<li>CCS Cloud</li>
+<li>TI Resource Explorer</li>
+<li>GUI Composer</li>
+</ul>
+<p>  However, the exercises can also be completed using desktop/offline tools as well. If you want to run the exercises offline, you will need to download &amp; install the following:</p>
+<ul>
+<li>CCS 7.1+</li>
+<li>SimpleLink SDK for your given LaunchPad</li>
+</ul>
+<h3 id="hardware-requirements">Hardware requirements</h3>
+<ul>
+<li>A SimpleLink MCU LaunchPad Development Kit</li>
+</ul>
+<h3 id="recommended-reading">Recommended Reading</h3>
+<ul>
+<li>TI Driver GPIO driver API Guide</li>
+<li><code>gpio interrupt</code> example readme.html</li>
+</ul>
+<h1 id="-task-0-level-set">  Task 0 - Level set</h1>
+<p>  For this simple tutorial, we are starting with a basic code example. If you completed the "TI Drivers Project Zero" and "GUI Composer Project Zero" tutorials, this should look familiar. In this basic example, we are periodically reading an ADC channel. We compare the latest ADC reading with a threshold, and if the reading is above or below the threshold, we toggle an LED on or off. In addition to that, we learned how to develop a simple PC-side GUI for visualizing the ADC readings, allowing users to change the threshold using a GUI-based slider, and added a GUI-based LED indicator that mirrored the status of the physical LED on our hardware.</p>
+<div class="panel-group">
+  <div class="panel panel-success">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle collapsed" data-toggle="collapse" href="#expandable_-click-here-to-see-the-code-that-you-would-have-ended-with-by-completing-those-exercises-"><p>  Click here to see the code that you would have ended with by completing those exercises:</p>
+</a>
+      </h4>
+    </div>
+    <div id="expandable_-click-here-to-see-the-code-that-you-would-have-ended-with-by-completing-those-exercises-" class="panel-collapse collapse">
+      <div class="panel-body"><div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_1')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_1" class="hljs cpp">  <span class="hljs-comment">/*
+   *  ======== empty.c ========
+   */</span>
+
+  <span class="hljs-comment">/* For usleep() */</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;unistd.h&gt;</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdint.h&gt;</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stddef.h&gt;</span>
+
+  <span class="hljs-comment">/* Driver Header files */</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/drivers/GPIO.h&gt;</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/drivers/ADC.h&gt;</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/display/Display.h&gt;</span>
+  <span class="hljs-comment">// #include &lt;ti/drivers/I2C.h&gt;</span>
+  <span class="hljs-comment">// #include &lt;ti/drivers/SDSPI.h&gt;</span>
+  <span class="hljs-comment">// #include &lt;ti/drivers/SPI.h&gt;</span>
+  <span class="hljs-comment">// #include &lt;ti/drivers/UART.h&gt;</span>
+  <span class="hljs-comment">// #include &lt;ti/drivers/Watchdog.h&gt;</span>
+
+  <span class="hljs-comment">/* Board Header file */</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> "Board.h"</span>
+
+  <span class="hljs-comment">/* global variableS FOR GUI COMPOSER */</span>
+  <span class="hljs-keyword">uint16_t</span> adcValue = <span class="hljs-number">0</span>;
+  <span class="hljs-keyword">uint16_t</span> threshold = <span class="hljs-number">100</span>;
+  <span class="hljs-keyword">uint16_t</span> trigger = <span class="hljs-number">0</span>;
+
+  <span class="hljs-comment">/*
+   *  ======== mainThread ========
+   */</span>
+
+  <span class="hljs-keyword">void</span> *mainThread(<span class="hljs-keyword">void</span> *arg0)
+  {
+    <span class="hljs-comment">/* ~10 loops/second */</span>
+    <span class="hljs-keyword">uint32_t</span> time = <span class="hljs-number">100000</span>;  <span class="hljs-comment">// update ~10/second</span>
+
+    <span class="hljs-comment">/* Call driver init functions */</span>
+    GPIO_init();
+    ADC_init();
+    <span class="hljs-comment">// I2C_init();</span>
+    <span class="hljs-comment">// SDSPI_init();</span>
+    <span class="hljs-comment">// SPI_init();</span>
+    <span class="hljs-comment">// UART_init();</span>
+    <span class="hljs-comment">// Watchdog_init();</span>
+
+    <span class="hljs-comment">/* Open Display Driver */</span>
+    Display_Handle    displayHandle;
+    Display_Params    displayParams;
+    Display_Params_init(&amp;displayParams);
+    displayHandle = Display_open(Display_Type_UART, NULL);
+
+    <span class="hljs-comment">/* Open ADC Driver */</span>
+    ADC_Handle adc;
+    ADC_Params params;
+    ADC_Params_init(&amp;params);
+    adc = ADC_open(Board_ADC0, &amp;params);
+    <span class="hljs-keyword">if</span> (adc == NULL) {
+        <span class="hljs-comment">// Error initializing ADC channel 0</span>
+        <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+    }
+
+    <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>) {
+      <span class="hljs-keyword">int_fast16_t</span> res;
+      res = ADC_convert(adc, &amp;adcValue);
+      <span class="hljs-keyword">if</span> (res == ADC_STATUS_SUCCESS) {
+        Display_printf(displayHandle, <span class="hljs-number">1</span>, <span class="hljs-number">0</span>, <span class="hljs-string">"ADC Reading %d"</span>, adcValue);
+        <span class="hljs-keyword">if</span>(adcValue &gt;= threshold){
+          GPIO_write(Board_GPIO_LED0, Board_GPIO_LED_ON);
+          trigger = <span class="hljs-number">1</span>;
+        } <span class="hljs-keyword">else</span>{
+          GPIO_write(Board_GPIO_LED0, Board_GPIO_LED_OFF);
+          trigger = <span class="hljs-number">0</span>;
+        }
+      }
+
+      usleep(time);
+    }
+  }
+</code></pre></div></div>
+</div>
+    </div>
+  </div>
+</div><h1 id="-task-1-adding-gpio-interrupts-to-our-base-example-">  Task 1 - Adding GPIO interrupts to our base example.</h1>
+<p>  In our basic example, the only way to modify the threshold was using a GUI-based horizontal slider. In this training, we want to also enable users to raise/lower the threshold using 2 switches available on our LaunchPad hardware. Pressing the left switch will lower the threshold, while clicking the right switch will raise the threshold. This is a perfect use-case for adding GPIO interrupts.</p>
+<h2 id="-1-finding-the-ti-drivers-based-gpio-interrupt-code-example">  1. Finding the TI Drivers-based GPIO interrupt code example</h2>
+<p>  The SimpleLink™ SDK includes a simple code example for learning how to setup a simple GPIO interrupt. You can find it using TI Resource Explorer by navigating to:</p>
+<p>  '[Simplelink SDK] &gt; Examples &gt; Development Tools &gt; [Your Hardware kit] &gt; TI Drivers &gt; gpiointerrupt'</p>
+<p>  Reading the associated README.html provided with the code example, we see that this example simply toggles an LED when a button is pressed. This is a perfect starting point for our application.</p>
+<h2 id="-2-breaking-down-the-gpio-interrupt-code-example">  2. Breaking down the GPIO interrupt code example</h2>
+<p>  In general, there are a few things to do when creating a GPIO interrupt within your application.</p>
+<h3 id="need-to-include-gpio-driver-header-file-initialize-it">Need to include GPIO driver header file &amp; initialize it</h3>
+<p>  We first need to ensure that the GPIO driver header file is included. This should already be the case in our example code because we are already using the GPIO driver to control the LEDs.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_2')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_2" class="hljs cpp">  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/drivers/GPIO.h&gt;</span>
+</code></pre></div></div>
+<p>  We also need to initialize the driver. But again, this has already been done since we're using the GPIO driver for the LEDs.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_3')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_3" class="hljs">  GPIO_init();
+</code></pre></div></div>
+<h3 id="callback-functions-for-your-interrupt">Callback functions for your interrupt</h3>
+<p>  What do you want to accomplish when your interrupt is triggered? In general, you want your interrupts to be short and sweet. In the case for the <code>gpio interrupt</code> example, they simply toggle an LED &amp; increment a global variable <code>count</code>. You'll also notice that they have 2 callback functions, one for each button (if your hardware has 2 buttons).</p>
+<p>  For this exercise, we want to raise/lower our alert <code>threshold</code> in our callback function. We'll need 2 callback functions, one for the left-button on our LaunchPad, and another for the right-button on our LaunchPad.</p>
+<p>  The callback function for the left-button should decrement the global variable <code>threshold</code>. It should also include some basic logic to ensure that <code>threshold</code> never becomes a below-zero value.</p>
+<p>  The callback function for the right-button should increment the global variable <code>threshold</code>. It should also include some basic logic to ensure that <code>threshold</code> never becomes larger than the maximum reading your device's ADC resolution supports.</p>
+<p>  With this in mind, let's add in 2 callback functions to the top of our project:</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_4')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_4" class="hljs cpp">  <span class="hljs-comment">/*
+   *  ======== gpioButtonFxn0 ========
+   *  Callback function for the GPIO interrupt on Board_GPIO_BUTTON0.
+   */</span>
+  <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">gpioButtonFxn0</span><span class="hljs-params">(<span class="hljs-keyword">uint_least8_t</span> index)</span>
+  </span>{
+      <span class="hljs-comment">/* Clear the GPIO interrupt and decrement threshold */</span>
+      <span class="hljs-keyword">if</span>(threshold &lt; <span class="hljs-number">250</span>){ <span class="hljs-comment">// Ensure threshold doesn't go below zero</span>
+          threshold = <span class="hljs-number">0</span>;
+      } <span class="hljs-keyword">else</span> {
+          threshold -= <span class="hljs-number">250</span>; <span class="hljs-comment">// decrement by 250</span>
+      }
+  }
+
+  <span class="hljs-comment">/*
+   *  ======== gpioButtonFxn1 ========
+   *  Callback function for the GPIO interrupt on Board_GPIO_BUTTON1.
+   *  This may not be used for all boards.
+   */</span>
+  <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">gpioButtonFxn1</span><span class="hljs-params">(<span class="hljs-keyword">uint_least8_t</span> index)</span>
+  </span>{
+      <span class="hljs-comment">/* Clear the GPIO interrupt and increment threshold */</span>
+      <span class="hljs-keyword">if</span>(threshold &gt; <span class="hljs-number">16133</span>){ <span class="hljs-comment">// Ensure threshold doesn't go above max ADC range</span>
+          threshold = <span class="hljs-number">16383</span>;
+      } <span class="hljs-keyword">else</span> {
+          threshold += <span class="hljs-number">250</span>; <span class="hljs-comment">// increment by 250</span>
+      }
+  }
+</code></pre></div></div>
+<h3 id="install-your-interrupt-call-back-function">Install your interrupt call back function</h3>
+<p>  Once our callback functions are created, we need to install it using the <code>GPIO_setCallback()</code> function. We pass in 2 parameters, the IO that will trigger the interrupt &amp; the callback function that we want to execute when the interrupt occurs. We need to do this for each callback function.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_5')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_5" class="hljs bash">  /* install Button callback */
+  GPIO_<span class="hljs-built_in">set</span>Callback(Board_GPIO_BUTTON0, gpioButtonFxn0);
+  GPIO_<span class="hljs-built_in">set</span>Callback(Board_GPIO_BUTTON1, gpioButtonFxn1);
+</code></pre></div></div>
+<h3 id="enable-your-interrupt">Enable your interrupt</h3>
+<p>  Now that our callback functions have been created &amp; installed, we simply need to enable interrupts. We need to enable both interrupts using the <code>GPIO_enableInt()</code> API.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_6')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_6" class="hljs bash">  /* Enable interrupts */
+  GPIO_<span class="hljs-built_in">enable</span>Int(Board_GPIO_BUTTON0);
+  GPIO_<span class="hljs-built_in">enable</span>Int(Board_GPIO_BUTTON1);
+</code></pre></div></div>
+<h2 id="-5-here-s-what-we-should-end-up-with">  5. Here's what we should end up with</h2>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_7')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_7" class="hljs cpp">  <span class="hljs-comment">/*
+   *  ======== empty.c ========
+   */</span>
+
+  <span class="hljs-comment">/* For usleep() */</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;unistd.h&gt;</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdint.h&gt;</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stddef.h&gt;</span>
+
+  <span class="hljs-comment">/* Driver Header files */</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/drivers/GPIO.h&gt;</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/drivers/ADC.h&gt;</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/display/Display.h&gt;</span>
+  <span class="hljs-comment">// #include &lt;ti/drivers/I2C.h&gt;</span>
+  <span class="hljs-comment">// #include &lt;ti/drivers/SDSPI.h&gt;</span>
+  <span class="hljs-comment">// #include &lt;ti/drivers/SPI.h&gt;</span>
+  <span class="hljs-comment">// #include &lt;ti/drivers/UART.h&gt;</span>
+  <span class="hljs-comment">// #include &lt;ti/drivers/Watchdog.h&gt;</span>
+
+  <span class="hljs-comment">/* Board Header file */</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> "Board.h"</span>
+
+  <span class="hljs-comment">/* GLOBAL VARIABLES FOR GUI COMPOSER */</span>
+  <span class="hljs-keyword">uint16_t</span> adcValue = <span class="hljs-number">0</span>;
+  <span class="hljs-keyword">uint16_t</span> threshold = <span class="hljs-number">100</span>;
+  <span class="hljs-keyword">uint16_t</span> trigger = <span class="hljs-number">0</span>;
+
+  <span class="hljs-comment">/*
+   *  ======== gpioButtonFxn0 ========
+   *  Callback function for the GPIO interrupt on Board_GPIO_BUTTON0.
+   */</span>
+  <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">gpioButtonFxn0</span><span class="hljs-params">(<span class="hljs-keyword">uint_least8_t</span> index)</span>
+  </span>{
+    <span class="hljs-comment">/* Clear the GPIO interrupt and decrement threshold */</span>
+    <span class="hljs-keyword">if</span>(threshold &lt; <span class="hljs-number">250</span>){ <span class="hljs-comment">// Ensure threshold doesn't go below zero</span>
+        threshold = <span class="hljs-number">0</span>;
+    } <span class="hljs-keyword">else</span> {
+        threshold -= <span class="hljs-number">250</span>; <span class="hljs-comment">// decrement by 250</span>
+    }
+  }
+
+  <span class="hljs-comment">/*
+   *  ======== gpioButtonFxn1 ========
+   *  Callback function for the GPIO interrupt on Board_GPIO_BUTTON1.
+   *  This may not be used for all boards.
+   */</span>
+  <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">gpioButtonFxn1</span><span class="hljs-params">(<span class="hljs-keyword">uint_least8_t</span> index)</span>
+  </span>{
+    <span class="hljs-comment">/* Clear the GPIO interrupt and increment threshold */</span>
+    <span class="hljs-keyword">if</span>(threshold &gt; <span class="hljs-number">16133</span>){ <span class="hljs-comment">// Ensure threshold doesn't go above max ADC range</span>
+        threshold = <span class="hljs-number">16383</span>;
+    } <span class="hljs-keyword">else</span> {
+        threshold += <span class="hljs-number">250</span>; <span class="hljs-comment">// increment by 250</span>
+    }
+  }
+
+  <span class="hljs-comment">/*
+   *  ======== mainThread ========
+   */</span>
+
+  <span class="hljs-keyword">void</span> *mainThread(<span class="hljs-keyword">void</span> *arg0)
+  {
+    <span class="hljs-comment">/* ~10 loops/second */</span>
+    <span class="hljs-keyword">uint32_t</span> time = <span class="hljs-number">100000</span>;
+
+    <span class="hljs-comment">/* Call driver init functions */</span>
+    GPIO_init();
+    ADC_init();
+    <span class="hljs-comment">// I2C_init();</span>
+    <span class="hljs-comment">// SDSPI_init();</span>
+    <span class="hljs-comment">// SPI_init();</span>
+    <span class="hljs-comment">// UART_init();</span>
+    <span class="hljs-comment">// Watchdog_init();</span>
+
+    <span class="hljs-comment">/* Open Display Driver */</span>
+    Display_Handle    displayHandle;
+    Display_Params    displayParams;
+    Display_Params_init(&amp;displayParams);
+    displayHandle = Display_open(Display_Type_UART, NULL);
+
+    <span class="hljs-comment">/* Open ADC Driver */</span>
+    ADC_Handle adc;
+    ADC_Params params;
+    ADC_Params_init(&amp;params);
+    adc = ADC_open(Board_ADC0, &amp;params);
+    <span class="hljs-keyword">if</span> (adc == NULL) {
+        <span class="hljs-comment">// Error initializing ADC channel 0</span>
+        <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+    }
+
+    <span class="hljs-comment">/* install Button callback */</span>
+    GPIO_setCallback(Board_GPIO_BUTTON0, gpioButtonFxn0);
+    GPIO_setCallback(Board_GPIO_BUTTON1, gpioButtonFxn1);
+
+    <span class="hljs-comment">/* Enable interrupts */</span>
+    GPIO_enableInt(Board_GPIO_BUTTON0);
+    GPIO_enableInt(Board_GPIO_BUTTON1);
+
+    <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>) {
+        <span class="hljs-keyword">int_fast16_t</span> res;
+        res = ADC_convert(adc, &amp;adcValue);
+        <span class="hljs-keyword">if</span> (res == ADC_STATUS_SUCCESS) {
+            Display_printf(displayHandle, <span class="hljs-number">1</span>, <span class="hljs-number">0</span>, <span class="hljs-string">"ADC Reading %d"</span>, adcValue);
+
+            <span class="hljs-keyword">if</span>(adcValue &gt;= threshold){
+                GPIO_write(Board_GPIO_LED0, Board_GPIO_LED_ON);
+                trigger = <span class="hljs-number">1</span>;
+            } <span class="hljs-keyword">else</span>{
+                GPIO_write(Board_GPIO_LED0, Board_GPIO_LED_OFF);
+                trigger = <span class="hljs-number">0</span>;
+            }
+        }
+
+        usleep(time);
+    }
+  }
+</code></pre></div></div>
+<h2 id="-3-let-s-program-our-launchpad">  3. Let's program our LaunchPad</h2>
+<p>  Now that we've added a few simple GPIO interrupts, let's go ahead and program our LaunchPad. Let's also run our GUI Composer interface that we created in the "GUI Composer : Project Zero" exercise. We should now be able to modify the threshold value using either the graphical slider in GUI Composer, or by clicking the left/right buttons on your LaunchPad kit.</p>
+<p>  Programming your LaunchPad will also generate a new .out file that we can upload into GUI Composer for visualizing our global variables.</p>
+<h1 id="-task-2-configuring-gui-composer">  Task 2 - Configuring GUI Composer</h1>
+<h2 id="-1-modifying-existing-gui">  1. Modifying existing GUI</h2>
+<p>  If you completed "GUI Composer Project Zero" you should be able to open the GUI we previously created in that exercise. Since we made small edits to our application, we need to re-upload our new .out file into GUI Composer so that the appropriate global variables can be bound to the various GUI elements.</p>
+<p>  Once the GUI we previously created is open in GUI Composer, click on the menu <code>Project &gt; Target Communications...</code></p>
+<p>  Delete the old .out file that we previously uploaded &amp; upload the new .out file from our updated project. We can find the new generated .out file in the Debug folder in CCS Cloud.</p>
+<h2 id="-2-testing-it-out-expected-results">  2. Testing it out &amp; Expected results</h2>
+<p>  Go ahead and click the "play" button in GUI Composer to run your GUI.</p>
+<p>  All of the previous functionality is still there, with the added ability to also modify threshold using our GPIO buttons on our LaunchPad. Notice that the horizontal slider for controlling threshold within the GUI updates appropriately when you raise/lower threshold using the physical buttons.</p>
+<p>  In the quick animation below, we see that our <code>threshold</code> global variable is being updated when we trigger our interrupts by clicking either the right or left button (to raise/lower the value). We also see that we can still modify our threshold value by using our GUI Composer-based slider as well. And as before, we see that the LED "alert" indicator updates appropriately as we modify our threshold value.</p>
+<blockquote>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/gpioInterruptGUI.gif" alt="" class="img-responsive"></div><p></p>
+</blockquote>
+<div align="center" style="margin-top: 4em; font-size: smaller;">
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="../../web_support/cc_license_icon.png"></a><br>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.</div>
+
+</div><div class="col-xs-4 col-sm-2 sidebar-offcanvas bs-docs-sidebar hidden-print" id="sidebar-overview"><ul class="nav nav-stacked fixed" id="sidebar"><li><a href="#-introduction">  Introduction</a></li><li><a href="#-prerequisites">  Prerequisites</a><ul class="nav nav-stacked"><ul class="nav nav-stacked"><li><a href="#recommended-material">Recommended material</a></li><li><a href="#software-for-desktop-development">Software for desktop development</a></li><li><a href="#hardware-requirements">Hardware requirements</a></li><li><a href="#recommended-reading">Recommended Reading</a></li></ul></ul></li><li><a href="#-task-0-level-set">  Task 0 - Level set</a></li><li><a href="#-task-1-adding-gpio-interrupts-to-our-base-example-">  Task 1 - Adding GPIO interrupts to our base example.</a><ul class="nav nav-stacked"><li><a href="#-1-finding-the-ti-drivers-based-gpio-interrupt-code-example">  1. Finding the TI Drivers-based GPIO interrupt code example</a></li><li><a href="#-2-breaking-down-the-gpio-interrupt-code-example">  2. Breaking down the GPIO interrupt code example</a><ul class="nav nav-stacked"><li><a href="#need-to-include-gpio-driver-header-file-initialize-it">Need to include GPIO driver header file &amp; initialize it</a></li><li><a href="#callback-functions-for-your-interrupt">Callback functions for your interrupt</a></li><li><a href="#install-your-interrupt-call-back-function">Install your interrupt call back function</a></li><li><a href="#enable-your-interrupt">Enable your interrupt</a></li></ul></li><li><a href="#-5-here-s-what-we-should-end-up-with">  5. Here's what we should end up with</a></li><li><a href="#-3-let-s-program-our-launchpad">  3. Let's program our LaunchPad</a></li></ul></li><li><a href="#-task-2-configuring-gui-composer">  Task 2 - Configuring GUI Composer</a><ul class="nav nav-stacked"><li><a href="#-1-modifying-existing-gui">  1. Modifying existing GUI</a></li><li><a href="#-2-testing-it-out-expected-results">  2. Testing it out &amp; Expected results</a></li></ul></li></ul></div></div></div></div>
+
+
+
+
+<link rel="stylesheet" href="../../web_support/highlight/styles/zenburn.css">
+<script src="../../web_support/strapdown/vendor/jquery-1.11.2.min.js"></script>
+<script src="../../web_support/strapdown/vendor/bootstrap.min.js"></script>
+<script src="../../web_support/highlight/highlight.pack.js"></script>
+<script type="text/javascript">document.isPreRendered = true;</script><script src="../../web_support/strapdown/v/0.2/strapdown.js"></script>      <div class="modal" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">        <div class="vertical-alignment-helper">          <div class="modal-dialog vertical-align-center">             <div class="modal-dialog">               <div class="modal-content" style="margin-left: auto;margin-right: auto;">                 <div class="modal-body">                   <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>                   <img src="" class="imagepreview img-responsive">                 </div>              </div>            </div>          </div>        </div>      </div>
+
+
+</body></html>

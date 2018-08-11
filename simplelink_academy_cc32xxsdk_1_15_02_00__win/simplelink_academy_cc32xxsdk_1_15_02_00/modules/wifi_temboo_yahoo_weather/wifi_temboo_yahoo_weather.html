@@ -1,0 +1,133 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>Wi-Fi Temboo Yahoo Weather</title>
+<link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/ubuntu-regular-woff.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/glyphicons-halflings-regular.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/united2.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/bootstrap-responsive.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/strapdown.css"><link rel="shortcut icon" type="image/x-icon" href="../../.metadata/favicon.ico"></head>
+
+<!-- START PRE -->
+
+
+
+
+
+
+<!-- END PRE -->
+
+<body style=""><div class="container"><nav class="navbar navbar-default navbar-static-top"><div class="container-fluid"> <div class="navbar-header">  <div id="headline" class="navbar-brand">Wi-Fi Temboo Yahoo Weather</div> </div> </div></nav><div class="container"><div class="row row-offcanvas row-offcanvas-left"><div class="col-xs-12 col-sm-9" id="content"><h1 id="introduction">Introduction</h1>
+<p>With internet-connected embedded devices, embedded developers have the ability to tap into a massive offering of <a href="https://en.wikipedia.org/wiki/Representational_state_transfer">REST-ful APIs</a> that are exposed by websites &amp; services.</p>
+<ul>
+<li>Does your embedded application need to know the local weather? Use the "get weather" API from yahoo.com. <strong>THIS IS WHAT WE'LL BE DOING IN THIS TRAINING!</strong></li>
+<li>Do you need to send an SMS/text message when a sensor value exceeds a threshold? Use the APIs provided by Twilio.</li>
+<li>Want to datalog your sensor values into a Google spreadsheet? Use Google's APIs for appending a row to a Google sheet.</li>
+</ul>
+<p>To help developers quickly interface with various REST-enabled services &amp; websites, Texas Instruments collaborated with <a href="https://temboo.com/hardware/ti">Temboo</a>. Temboo is an Internet of Things (IoT) partner who can generate application code based on the SimpleLink SDK that enables your internet-connected SimpleLink device to take advantage of hundreds of different REST APIs.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/temboo_examples.png" alt="" class="img-responsive"></div><p></p>
+<h2 id="temboo-supports-hundreds-of-web-interfaces">Temboo supports hundreds of web interfaces</h2>
+<p>Temboo enables developers to quickly generate SimpleLink SDK-based application code that allow your internet-connected SimpleLink device to interface with hundreds of web interfaces. Here is the list of the web services that your internet-connected SimpleLink device can interact with that Temboo can generate code for.</p>
+<p>You'll see that Temboo supports familiar services from Yahoo, Google, Twilio, Nexmo, Wolfram Alpha &amp; more. For a complete list, check out <a href="https://temboo.com/library/">https://temboo.com/library/</a>
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/temboo_supported_sites.gif" alt="" class="img-responsive"></div><p></p>
+<h1 id="prerequisites">Prerequisites</h1>
+<h2 id="software">Software</h2>
+<ul>
+<li>In this training, we will be using CCS Cloud (this requires a myTI login)</li>
+<li>We will need to create a Temboo account to leverage their service.</li>
+</ul>
+<h2 id="hardware">Hardware</h2>
+<ul>
+<li>1x CC3220S or CC3220SF LaunchPads (<a href="http://www.ti.com/tool/cc3220s-launchxl">CC3220S-LAUNCHXL</a> or <a href="http://www.ti.com/tool/cc3220sf-launchxl">CC3220SF-LAUNCHXL</a>)</li>
+</ul>
+<h1 id="task-1-setup">Task 1: Setup</h1>
+<p>Let's get everything configured &amp; set up.</p>
+<ol>
+<li>We'll need to create a Temboo account. You can do so by navigating to <a href="http://www.temboo.com">www.temboo.com</a>.</li>
+<li>Secondly, you'll need a myTI account if you don't already have one. This will allow us to use CCS Cloud to compile &amp; program our SimpleLink device with the code that Temboo will generate for us.</li>
+<li>If you haven't already done so, we need to ensure that your CC3220S or CC3220SF LaunchPad is configured in "Developer mode." Some CC3220 LaunchPad kits are shipped in "Production" mode out of the box to showcase the device's security capabilities. <a href="https://temboo.com/hardware/ti/setting-up-cc3220-for-ssl">Follow these instructions</a> to get your device into "Developer mode" using our UniFlash/Image Creator utility.</li>
+</ol>
+<p>At this point, you should have both a Temboo &amp; myTI account. Your LaunchPad should now also be in "Developer" mode, which will allow us to program new firmware to the CC3220 device.</p>
+<h1 id="task-2-testing-the-getweatherbyaddress-rest-api">Task 2: Testing the "GetWeatherByAddress" REST API</h1>
+<p>Now that we have a Temboo account, go ahead and log into your account at www.temboo.com</p>
+<ol>
+<li>Once logged in, look for the "GetWeatherByAddress" choreo. You can find it at <a href="https://temboo.com/library/Library/Yahoo/Weather/GetWeatherByAddress/">Yahoo &gt; Weather &gt; GetWeatherByAddress</a></li>
+<li>Depending on the REST-ful API you want to generate code for, Temboo will ask for a few parameters. The GetWeatherByAddress API only requires the address you want to know the weather for.</li>
+<li>Enter any address in the Address input field e.g., 12500 TI Blvd, Dallas, TX 75243.<blockquote>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/temboo_yahoo_weather_input.png" alt="" class="img-responsive"></div><p></p>
+</blockquote>
+</li>
+<li>Click the "Run now" button. Doing so will test the inputs to the REST API &amp; the response from the yahoo server will be displayed in the "Output" section below. The response from yahoo.com is in XML format, which can be parsed as needed for the data that we care about.</li>
+<li>In this case, the Temboo site ran the REST API to query the weather. Temboo can also generate code for your CC3220 device to run the same REST API request.</li>
+</ol>
+<div class="bs-callout bs-callout-warning "><h4><span style="vertical-align: middle;">Note: Some services will require additional registration
+</span></h4>
+<p>Yahoo weather doesn't require any registration or authentication to leverage their service. Others might require registration to leverage their REST APIs. If so, Temboo will ask for login/authentication details to get access to a given service.</p>
+</div>
+<h1 id="task-3-generating-code-for-the-cc3220-device">Task 3: Generating code for the CC3220 device</h1>
+<p>Now that we've confirmed that the REST API works &amp; we are getting a response from the yahoo server, we will go ahead and let Temboo generate SimpleLink SDK-based code for the CC3220 to make the same REST API call.</p>
+<ol>
+<li>At the top of the page, we need to tell Temboo which device they should generate code for. Select Texas Instruments form the drop down, then select the device you are using (CC3220S or CC3220SF).</li>
+<li>Once your device is selected, we need to tell Temboo how your device is going to connect to the internet. Be sure to provide your network credentials (SSID, password, etc) here so Temboo can generate the appropriate code for your CC3220 device to connect to your network/internet.<blockquote>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/temboo_ti_cc3220.png" alt="" class="img-responsive"></div><p></p>
+</blockquote>
+</li>
+<li>Temboo, among other things, will generate a file called 'TembooAccount.h' that will house your Temboo credentials, network credentials, etc.</li>
+</ol>
+<h1 id="task-4-optional-temboo-can-also-include-conditionals-in-the-generated-code">Task 4: (Optional) Temboo can also include conditionals in the generated code</h1>
+<p>Do you only want to trigger the REST API call on a certain I/O event (i.e. only request weather from yahoo.com if a digital pin goes high, or analog input exceeds threshold)? Alternatively, do you want to trigger an actuator event based on the response from the server (i.e. toggle pin high or low if the response from the yahoo server is above/below a threshold)? These are both possible with Temboo. Temboo can generate the appropriate logic (if-statement) in your application code to take these conditions into account.</p>
+<ol>
+<li>Use the visual pin board to set up a sensor or actuator and the conditions option will appear. <a href="https://temboo.com/hardware/conditions">You can learn more about Temboo conditions here</a>.<blockquote>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/temboo_conditions.png" alt="" class="img-responsive"></div><p></p>
+</blockquote>
+</li>
+</ol>
+<h1 id="task-5-importing-generated-code-to-ccs-cloud">Task 5: Importing generated code to CCS Cloud</h1>
+<p>Scrolling down to the bottom of the page, you'll see that Temboo has generated code for your CC3220 device based on the parameters you provided above. At this point, we have the option to import this generated code directly into CCS Cloud, TI's browser-based IDE.</p>
+<blockquote>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/temboo_ccs_cloud.png" alt="" class="img-responsive"></div><p></p>
+</blockquote>
+<ol>
+<li>Click the "Send to CCS Cloud" button to the right of your generated code.</li>
+<li>Name your application and click Send.</li>
+<li>Click the link that appears to visit the CCS Cloud IDE in your browser. CCS Cloud will generate a complete project based on the code Temboo just generated.</li>
+</ol>
+<h1 id="task-6-edit-compile-debug-flash-the-generated-code">Task 6: Edit, Compile, Debug, Flash the generated code</h1>
+<ol>
+<li>Now that the generated  project is in CCS Cloud, you have the ability to run it as-is, or modify it for your specific use-case.</li>
+<li>To compile the project &amp; flash your LaunchPad, be sure your LaunchPad is plugged into USB.</li>
+<li>Then, click the "Run" button. This will compile the project &amp; flash the binary to your CC3220 device.<blockquote>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/temboo_compile.gif" alt="" class="img-responsive"></div><p></p>
+</blockquote>
+</li>
+<li>You can also use the integrated terminal/serial monitor available in CCS Cloud to receive the serial UART messages coming from your LaunchPad.</li>
+<li>Click on 'Target &gt; Select COM Port'</li>
+<li>In the dialog box, select the appropriate COM port &amp; appropriate baud rate (Temboo-generated code defaults to 115200 baud).</li>
+<li>Click 'OK' - the serial monitor below should print out messages coming from your LaunchPad. In our case, we'll see the weather response that our LaunchPad recieved from Yahoo by way of Temboo (screenshot of terminal output below).</li>
+</ol>
+<center>
+<div class="modal-pop" style="cursor:zoom-in;"><img src="resources/temboo_serial_output.png" alt="" class="img-responsive"></div>
+</center>
+
+<div class="bs-callout bs-callout-success "><h4><span class="glyphicon glyphicon-ok-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Challenge! Extend the application.
+</span></h4>
+<p>Temboo made it super easy to interface with various cloud/web services. Now that the generated code is in CCS Cloud, you can extend the application to add further capabilities. For example, you can make an intelligent thermostat or connected sprinkler zone controller that now has weather awareness thanks to cloud-connectivity.</p>
+</div>
+<h1 id="task-7-try-out-the-other-services">Task 7: Try out the other services</h1>
+<p>Great! Now that you've successfully generated SimpleLink SDK-based code with Temboo to work with the Yahoo weather service, you can start exploring the other REST APIs Temboo has support for. Some ideas:</p>
+<ul>
+<li>Send an email with Gmail</li>
+<li>Send an SMS with Twilio</li>
+<li>Post a tweet on Twitter</li>
+<li>Query Wolfram Alpha</li>
+<li>Post a service ticket with Zendesk</li>
+</ul>
+<p>Have fun using Temboo with the SimpleLink SDK!</p>
+</div><div class="col-xs-4 col-sm-2 sidebar-offcanvas bs-docs-sidebar hidden-print" id="sidebar-overview"><ul class="nav nav-stacked fixed" id="sidebar"><li><a href="#introduction">Introduction</a><ul class="nav nav-stacked"><li><a href="#temboo-supports-hundreds-of-web-interfaces">Temboo supports hundreds of web interfaces</a></li></ul></li><li><a href="#prerequisites">Prerequisites</a><ul class="nav nav-stacked"><li><a href="#software">Software</a></li><li><a href="#hardware">Hardware</a></li></ul></li><li><a href="#task-1-setup">Task 1: Setup</a></li><li><a href="#task-2-testing-the-getweatherbyaddress-rest-api">Task 2: Testing the "GetWeatherByAddress" REST API</a></li><li><a href="#task-3-generating-code-for-the-cc3220-device">Task 3: Generating code for the CC3220 device</a></li><li><a href="#task-4-optional-temboo-can-also-include-conditionals-in-the-generated-code">Task 4: (Optional) Temboo can also include conditionals in the generated code</a></li><li><a href="#task-5-importing-generated-code-to-ccs-cloud">Task 5: Importing generated code to CCS Cloud</a></li><li><a href="#task-6-edit-compile-debug-flash-the-generated-code">Task 6: Edit, Compile, Debug, Flash the generated code</a></li><li><a href="#task-7-try-out-the-other-services">Task 7: Try out the other services</a></li></ul></div></div></div></div>
+
+
+
+
+<link rel="stylesheet" href="../../web_support/highlight/styles/zenburn.css">
+<script src="../../web_support/strapdown/vendor/jquery-1.11.2.min.js"></script>
+<script src="../../web_support/strapdown/vendor/bootstrap.min.js"></script>
+<script src="../../web_support/highlight/highlight.pack.js"></script>
+<script type="text/javascript">document.isPreRendered = true;</script><script src="../../web_support/strapdown/v/0.2/strapdown.js"></script>      <div class="modal" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">        <div class="vertical-alignment-helper">          <div class="modal-dialog vertical-align-center">             <div class="modal-dialog">               <div class="modal-content" style="margin-left: auto;margin-right: auto;">                 <div class="modal-body">                   <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>                   <img src="" class="imagepreview img-responsive">                 </div>              </div>            </div>          </div>        </div>      </div>
+
+
+</body></html>

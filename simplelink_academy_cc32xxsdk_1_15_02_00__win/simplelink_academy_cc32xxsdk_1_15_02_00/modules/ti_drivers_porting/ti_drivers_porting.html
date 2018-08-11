@@ -1,0 +1,329 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>Porting Fundamentals</title>
+<link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/ubuntu-regular-woff.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/glyphicons-halflings-regular.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/united2.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/bootstrap-responsive.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/strapdown.css"><link rel="shortcut icon" type="image/x-icon" href="../../.metadata/favicon.ico"></head>
+
+<!-- START PRE -->
+
+
+
+
+
+
+<!-- END PRE -->
+
+<body style=""><div class="container"><nav class="navbar navbar-default navbar-static-top"><div class="container-fluid"> <div class="navbar-header">  <div id="headline" class="navbar-brand">Porting Fundamentals</div> </div> </div></nav><div class="container"><div class="row row-offcanvas row-offcanvas-left"><div class="col-xs-12 col-sm-9" id="content"><h1 id="introduction">Introduction</h1>
+<p>With changing markets and new devices always coming out, software should be written in a manner which allows it to be moved to different devices easily. With the <a href="http://www.ti.com/simplelink">SimpleLink™ software development kits (SDKs)</a>, no/minimal application software changes are required when porting to a new device or RTOS. This is accomplished by using TI Drivers and POSIX APIs.</p>
+<p>The TI Drivers interface is the same for all SimpleLink Devices, thus it allows easy movement of target code. The SimpleLink SDKs have POSIX support for both TI-RTOS and FreeRTOS. This allows easy movement between these RTOS environments.</p>
+<p>This workshop is an introduction to the portability of applications using SimpleLink SDKs. This workshop will focus on the key areas that might be affected when porting an existing driver application to a different SimpleLink device.</p>
+<p>The lab session targets porting the demos/portable example from the <a href="http://www.ti.com/tool/msp-exp432p401r">MSP-EXP432P401R LaunchPad™ Development Kit</a> to <a href="http://www.ti.com/tool/LAUNCHXL-CC2640R2?keyMatch=CC2640R2">CC2640R2F wireless MCU LaunchPad™ development kit</a>. The steps/concepts are applicable for any of the SimpleLink SDK devices though. While the lab will focus on porting a CCS project, the concepts are the same for IAR and makefile based projects.</p>
+<p><strong>Here's what we'll learn:</strong></p>
+<ul>
+<li>Key areas that might require a change when porting an application to a different device</li>
+<li>Key areas that might require a change when porting an application to a different RTOS</li>
+</ul>
+<h1 id="prerequisites">Prerequisites</h1>
+<h2 id="recommended-background-reading">Recommended Background Reading</h2>
+<ul>
+<li><a href="../tidrivers_project_zero/tidrivers_project_zero.html">TI Drivers Project Zero</a></li>
+<li><a href="../ti_drivers_config/ti_drivers_config.html">TI Drivers Configuration</a></li>
+<li><a href="../posix_project_zero/posix_project_zero.html">POSIX Overview</a></li>
+</ul>
+<h2 id="software">Software</h2>
+<ul>
+<li>This tutorial can be done 100% with a web browser in <a href="https://dev.ti.com/ide">CCS Cloud</a>. However, the exercises can also be completed using desktop/offline tools as well.</li>
+</ul>
+<h2 id="hardware">Hardware</h2>
+<ul>
+<li>Any two SimpleLink LaunchPad Development Kits</li>
+</ul>
+<h1 id="areas-of-potential-change-when-porting-an-application">Areas of potential change when porting an application</h1>
+<p>These are the four areas that should be looked at when porting an application:</p>
+<ul>
+<li>Project Settings</li>
+<li>RTOS Configuration Project</li>
+<li>Board Files (e.g. MSP_EXP432P401R.c)</li>
+<li>Other Target Code</li>
+</ul>
+<p>Let's look at each one of these in more detail.</p>
+<h2 id="project-settings">Project Settings</h2>
+<p>Here is a picture of some of the compiler options for an MSP432 application. As you can see, some of these are device specific. In this workshop, we'll see how to address these when moving to a new device.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/compiler_options.png" alt="" class="img-responsive"></div><p></p>
+<p>We highly recommend you keep track of the Project Setting changes you make with your application. You'll potentially need to make similar changes when you move to the new device and it's good engineering practice.</p>
+<h2 id="rtos-configuration-project">RTOS Configuration Project</h2>
+<p>Let's focus on TI-RTOS based applications first. The TI-RTOS Configuration File (aka .cfg file) is required for each application that uses TI-RTOS. This file configures TI-RTOS, allowing it to scale up or down as needed. There are two ways a .cfg file can be consumed by the application (from a final .out standpoint, both ways are basically equivalent).</p>
+<ul>
+<li>The .cfg file in the example project. All the TI-RTOS kernel examples use this method.</li>
+<li>The .cfg file is a dependent project. All the other TI-RTOS based examples use this method. This approach also allows examples to be ported to a different RTOS more easily.</li>
+</ul>
+<p>Generally, the .cfg file does not contain device specific configuration.</p>
+<p>For FreeRTOS, all examples depend on a FreeRTOS project. Similarly to TI-RTOS, generally, the FreeRTOSConfig.h file does not contain device specific configuration.</p>
+<p>For a more detailed discussion of the RTOS configuration files, please refer to <a href="../tirtos_basics/tirtos_basics.html">TI-RTOS Basics</a></p>
+<h2 id="board-files">Board Files</h2>
+<p>These files are board specific (and therefore device specific also). There are five files</p>
+<ul>
+<li><strong><em>board</em>.c</strong>: Source file with the TI Drivers configuration. In the below example, it is MSP_EXP432P401R.c</li>
+<li><strong><em>board</em>.h</strong>: Include file for the TI Drivers configuration. In the below example, it is MSP_EXP432P401R.h.</li>
+<li><strong><em>board</em>.cmd</strong>: The linker file for this board. In the below example, it is MSP_EXP432P401R.cmd.</li>
+<li><strong>Board.html</strong>: Picture of the board &amp; description of the LEDs, buttons, etc.</li>
+<li><strong>Board.h</strong>: this contains macros that allow driver examples to be portable across other boards. For example instead of using MSP_EXP432P401R_GPIO_LED_ON, the application uses Board_GPIO_LED_ON.</li>
+</ul>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/board_files.png" alt="" class="img-responsive"></div><p></p>
+<p>We highly recommend you keep track of the changes you make to these files. You'll potentially need to make similar changes when you move to the new device.</p>
+<p>For a more detailed discussion of the board files, please refer to <a href="../ti_drivers_config/ti_drivers_config.html">TI Drivers Configuration Workshop</a>.</p>
+<h2 id="other-target-code">Other Target Code</h2>
+<p>To make a portable application, try to minimize use of device specific items. In the SimpleLink SDKs, if you use TI Drivers, you've taken the first big step to making a portable application. Of course there may be some features that are device specific exposed in the <em>Driver</em>_control() APIs that you want to use. In this case, we recommend you try to isolate the device specific calls to a single location or file.</p>
+<h1 id="porting-to-different-devices">Porting to Different Devices</h1>
+<p>When porting to a different device, we recommend you import the Project Zero or out of box application from the destination device and use that as a template. You'll use the Project Settings, Board files and RTOS Configuration project from the template project with potentially no changes to the application target code.</p>
+<p>To help achieve zero application code changes, there are the following recommendations</p>
+<ol>
+<li><strong>Try to use the same version of Core SDK within the SimpleLink SDK for both devices</strong>. Please look the SDK’s release notes to determine the Core SDK version.</li>
+<li><strong>Try to avoid driverlib</strong> (source/ti/device/*) calls in application code.</li>
+<li><strong>Try to avoid other device specific calls</strong>. Examples of this are<ul>
+<li><em>Driver</em>_control() with device driver specific commands.</li>
+<li>Device specific Power APIs (they'll have the device name in the API)</li>
+<li>Device specific kernel APIs (they'll have the device name in the API).</li>
+</ul>
+</li>
+<li><strong>Try to avoid device specific settings in the kernel configuration files</strong>.</li>
+<li><strong>Note changes to any of the following areas</strong>. These will be useful when porting to the new device.<ul>
+<li>Build setting changes (e.g. new include search paths).</li>
+<li>Board file files changes (e.g. adding a new UART).</li>
+<li>Kernel Configuration changes (e.g. changing number of task priorities).</li>
+</ul>
+</li>
+</ol>
+<h1 id="task-1-import-portable-and-template-projects">Task 1: Import Portable and Template Projects</h1>
+<p>We are going to port a MSP432 application to a CC2640R2 LaunchPad. We'll be using TI Resource Explorer and CCS Cloud to do this lab. Please accept the license agreement as needed if you are comfortable with them.</p>
+<ol>
+<li><p>Go to <a href="http://dev.ti.com">dev.ti.com</a> and select Resource Explorer.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/trex.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>Import demos/portable project from SimpleLink MSP432 SDK into CCS Cloud (CCS Cloud is launched in a new browser tab and may require a login).</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/portable_project.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>In your Resource Explorer window, import CC2640R2-LAUNCHXLs drivers/empty project from SimpleLink CC2640R2 SDK</p>
+<p>This will be the project we'll port to.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/empty_project.png" alt="" class="img-responsive"></div><p></p>
+<p>Your CCS Cloud projects should look like this</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/imported_projects.png" alt="" class="img-responsive"></div><p></p>
+</li>
+</ol>
+<h1 id="task-2-project-settings-changes">Task 2: Project Settings Changes</h1>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">No Action needed!
+</span></h4>
+<p>  No "extra" project settings were done in the portable project, as the default project settings on empty_CC2640R2_LAUNCHXL_tirtos_ccs are fine.</p>
+</div>
+<h1 id="task-3-ti-rtos-configuration">Task 3. TI-RTOS Configuration</h1>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">No Action needed!
+</span></h4>
+<p>  The portable_MSP_EXP432P401R_tirtos_ccs project uses the shared TI-RTOS release configuration. The empty_CC2640R2_LAUNCHXL_tirtos_ccs also uses the same configuration (albeit for a different target). Therefore no changes are needed to the empty_CC2640R2_LAUNCHXL_tirtos_ccs TI-RTOS configuration.</p>
+</div>
+<h1 id="task-4-board-files">Task 4. Board Files</h1>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">No Action needed! These steps are going fast!
+</span></h4>
+<p>The portable_MSP_EXP432P401R_tirtos_ccs project was able to use the default <em>Board</em> files. The empty_CC2640R2_LAUNCHXL_tirtos_ccs application also uses the default ones.  Therefore no changes are needed to the empty_CC2640R2_LAUNCHXL_tirtos_ccs TI-RTOS configuration.</p>
+</div>
+<h1 id="task-5-other-target-code">Task 5. Other Target Code</h1>
+<ol>
+<li><p>First remove the <code>empty.c</code>, <code>main_tirtos.c</code>, <code>README.html</code> and <code>README.md</code> files from the empty_CC2640R2_LAUNCHXL_tirtos_ccs project.</p>
+</li>
+<li><p>Let's copy the <code>console.c</code>, <code>main_tirtos.c</code>, <code>temperature.c</code>, <code>README.md</code>, and <code>README.html</code> files in portable_MSP_EXP432P401R_tirtos_ccs and paste them into empty_CC2640R2_LAUNCHXL_tirtos_ccs.</p>
+<p>Your empty_CC2640R2_LAUNCHXL_tirtos_ccs project should look like this now.
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/newfiles_inempty.png" alt="" class="img-responsive"></div><p></p>
+</li>
+</ol>
+<h1 id="task-6-build-and-run-">Task 6. Build and Run!</h1>
+<ol>
+<li><p>Let's hook up your CC2640R2-LAUNCHXL and hit the Debug button in CCS Cloud.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/build_run.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>Time to open a terminal session and have the TMP007 give use the temperature! Please refer to the README.html for details on how the application works. Please refer to the README.html for details   (e.g. baudrate, etc.). Please note, there is a Serial option in CCS Cloud.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/terminal.png" alt="" class="img-responsive"></div><p></p>
+<p>To connect, open the Target-&gt;Connect COM Port...</p>
+</li>
+</ol>
+<h1 id="caveats">Caveats</h1>
+<div class="panel-group">
+  <div class="panel panel-warning">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle collapsed" data-toggle="collapse" href="#expandable_-cc3220-difference-"><p> CC3220 Difference</p>
+</a>
+      </h4>
+    </div>
+    <div id="expandable_-cc3220-difference-" class="panel-collapse collapse">
+      <div class="panel-body"><p>The CC3220 examples have power management disabled by default in the <em>Board</em>.c. This is to allow a better emulation experience. The portable project is designed to allow the application to go into low power modes. Since the same portable code works on all SimpleLink MCU Launcpads, the <code>CC32XX</code> symbol is used to determine whether or not to include the device specific enabling of the power management framework in the <code>console.c</code> file.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/conditional_code.png" alt="" class="img-responsive"></div><p></p>
+<p>So for CC3220 boards, let's add the <code>CC32XX</code> symbol
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/cc32xx_symbol.png" alt="" class="img-responsive"></div><p></p>
+<p>Please note: we could have put these changes into the <code>CC3220S_LAUNCHXL.c</code> file instead of having the conditional code in <code>console.c</code> (location shown below).
+</p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/board_c_instead.png" alt="" class="img-responsive"></div><p></p>
+</div>
+    </div>
+  </div>
+</div><h1 id="quiz">Quiz</h1>
+<p>Let's see if you picked up some key points...</p>
+<p>Pick which areas you may have to change when you move to a new device (more than 1 correct answer)</p>
+<div class="quiz-toolbar"><div>
+<input type="checkbox" id="q1.0" class="answer-right" name="quiz-1" style="display:none;"><label for="q1.0" class="quiz-label ">Linker file</label>
+<input type="checkbox" id="q1.1" class="answer-right" name="quiz-1" style="display:none;"><label for="q1.1" class="quiz-label ">*Board* files</label>
+<input type="checkbox" id="q1.2" class="answer-wrong" name="quiz-1" style="display:none;"><label for="q1.2" class="quiz-label " data-toggle="tooltip" data-html="true" data-container="body" data-placement="auto top" data-trigger="click" title="" data-original-title="&lt;p&gt; If you use TI Driver APIs, they are portable to other devices unchanged&lt;/p&gt;
+">UART calls </label>
+</div></div>
+<p>Every SimpleLink device has TI Drivers support</p>
+<div class="quiz-toolbar"><div>
+<input type="radio" id="q2.3" class="answer-right" name="quiz-2"><label for="q2.3" class="quiz-label ">Yes</label>
+<input type="radio" id="q2.4" class="answer-wrong" name="quiz-2"><label for="q2.4" class="quiz-label " data-toggle="tooltip" data-html="true" data-container="body" data-placement="auto top" data-trigger="click" title="" data-original-title="&lt;p&gt; Incorrect. TI Drivers are supported on all SimpleLink devices&lt;/p&gt;
+">No </label>
+</div></div>
+<p>Every SimpleLink device has POSIX support</p>
+<div class="quiz-toolbar"><div>
+<input type="radio" id="q3.5" class="answer-right" name="quiz-3"><label for="q3.5" class="quiz-label ">Yes</label>
+<input type="radio" id="q3.6" class="answer-wrong" name="quiz-3"><label for="q3.6" class="quiz-label " data-toggle="tooltip" data-html="true" data-container="body" data-placement="auto top" data-trigger="click" title="" data-original-title="&lt;p&gt; Incorrect. POSIX is supported on all SimpleLink devices&lt;/p&gt;
+">No </label>
+</div></div>
+<h1 id="bonus-task-switching-rtos">Bonus Task: Switching RTOS</h1>
+<p>If the application is based on POSIX, the application can be ported to the different RTOS easily. Unfortunately this cannot be done on CCS Cloud currently. We'll use desktop CCS to do this lab.</p>
+<p>To move portable to from TI-RTOS to FreeRTOS, the following are the steps we need to do</p>
+<ul>
+<li>Import a FreeRTOS example to get:<ul>
+<li><code>main_freertos.c</code> file</li>
+<li>FreeRTOS Project Settings</li>
+<li>FreeRTOS Kernel Project</li>
+<li>FreeRTOS Linker file</li>
+</ul>
+</li>
+<li>Change some Project Settings in portable</li>
+<li>Change RTOS Configuration Project in portable</li>
+<li>Use the main_freertos.c file in portable</li>
+</ul>
+<h2 id="bonus-task-1-import-projects">Bonus Task 1: Import Projects</h2>
+<ol>
+<li><p>Open View-&gt;Resource Explorer in your desktop CCS and import the portable_MSP_EXP432P401R_tirtos_ccs project into the IDE.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/import_portable_ccs.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>Import a FreeRTOS example (this will be used to get some files and project settings). Let's use <code>empty</code>. Make sure to pick the FreeRTOS one!</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/import_empty_ccs.png" alt="" class="img-responsive"></div><p></p>
+<p>Your projects should look like this:</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/import_projects_ccs.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>Additionally, please make sure you have the FREERTOS_INSTALL_DIR is setup as described in the SimpleLink SDK User Guide.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/freertos_installdir.png" alt="" class="img-responsive"></div><p></p>
+</li>
+</ol>
+<h2 id="bonus-task-2-update-project-settings">Bonus Task 2: Update Project Settings</h2>
+<ol>
+<li><p>Copy (Ctrl-C or your OS equivalent) <strong>all</strong> the FreeRTOS include search paths from the empty project.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/include_options_empty.png" alt="" class="img-responsive"></div><p></p>
+<p>Remove all the include search paths in portable and paste in the ones from the empty project. Portable should look the same now.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/include_options_portable.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>Copy (Ctrl-C) the FreeRTOS libraries from the empty project.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/libraries_empty.png" alt="" class="img-responsive"></div><p></p>
+<p>and paste them into the portable project settings. Also remove the TI-RTOS and DPL libraries. Portable's libraries should look similar to this afterwards.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/libraries_portable.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>Finally in portable's diagnostic properties, let's suppress the "_c_int00 not being the entry point warning" (resetISR is for FreeRTOS).</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/supress_diag.png" alt="" class="img-responsive"></div><p></p>
+</li>
+</ol>
+<h2 id="bonus-task-3-change-rtos-configuration-project">Bonus Task 3: Change RTOS Configuration Project</h2>
+<ol>
+<li><p>Point to the FreeRTOS Kernel in the project settings for portable. You'll need to "Add" <code>freertos_builds_MSP_EXP432P401R_release_ccs</code> and remove <code>tirtos_builds_MSP_EXP432P401R_release_ccs</code>. Portable's dependent project should look like this:</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/dependencies_portable.png" alt="" class="img-responsive"></div><p></p>
+</li>
+</ol>
+<h2 id="bonus-task-4-board-files">Bonus Task 4: Board Files</h2>
+<ol>
+<li>Remove the <code>MSP_EXP432P401R_TIRTOS.cmd</code> linker from the portable example.</li>
+<li>Add empty's <code>MSP_EXP432P401R_FREERTOS.cmd</code> linker file to the portable example.</li>
+</ol>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Ctrl-C and Ctrl-V (or your OS equivalent) works with moving files in CCS!
+</span></h4>
+<p>The files get copied as you expect!</p>
+</div>
+<h2 id="bonus-task-5-update-depend-kernel-project">Bonus Task 5: Update Depend Kernel Project</h2>
+<p>Only the main_tirtos.c file needs to change. All the other application code stays the same because we are using POSIX. We could change main_tirtos.c to use FreeRTOS or remove the main_tirtos.c and use the empty main_freertos.c file then tweak as needed...we'll do the latter.</p>
+<ol>
+<li>Remove the main_tirtos.c file from the portable example.</li>
+<li><p>Add empty's main_freertos.c file to the portable example.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/portable_files_in_ccs.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>There were a few lines in the main_tirtos.c file that we actually needed. Please place the following items into main_freertos.c</p>
+<ul>
+<li>Add GPIO.h include after Board.h file</li>
+</ul>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_1')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_1" class="hljs cpp"><span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> "Board.h"</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/drivers/GPIO.h&gt; <span class="hljs-comment">// add this line</span></span>
+</code></pre></div></div>
+<ul>
+<li>Change <code>extern void *mainThread(void *arg0);</code> to</li>
+</ul>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_2')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_2" class="hljs cpp"><span class="hljs-comment">/* Mutex to protect the reading/writing of the temperature variables */</span>
+pthread_mutex_t temperatureMutex;
+
+<span class="hljs-keyword">extern</span> <span class="hljs-keyword">void</span> *temperatureThread(<span class="hljs-keyword">void</span> *arg0);
+<span class="hljs-keyword">extern</span> <span class="hljs-keyword">void</span> *consoleThread(<span class="hljs-keyword">void</span> *arg0);
+</code></pre></div></div>
+<ul>
+<li>Add the Pthread and mutex creation into main_freertos.c. Change the following lines</li>
+</ul>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_3')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_3" class="hljs php">retc = pthread_create(&amp;thread, &amp;attrs, mainThread, <span class="hljs-keyword">NULL</span>);
+<span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+    <span class="hljs-comment">/* pthread_create() failed */</span>
+    <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+}
+</code></pre></div></div>
+<p>to</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_4')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_4" class="hljs php">retc = pthread_create(&amp;thread, &amp;attrs, consoleThread, <span class="hljs-keyword">NULL</span>);
+<span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+    <span class="hljs-comment">/* pthread_create() failed */</span>
+    <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+}
+
+<span class="hljs-comment">/*
+ *  Let's make the temperature thread a higher priority .
+ *  Higher number means higher priority in TI-RTOS.
+ */</span>
+priParam.sched_priority = <span class="hljs-number">2</span>;
+pthread_attr_setschedparam(&amp;attrs, &amp;priParam);
+
+retc = pthread_create(&amp;thread, &amp;attrs, temperatureThread, <span class="hljs-keyword">NULL</span>);
+<span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+    <span class="hljs-comment">/* pthread_create() failed */</span>
+    <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+}
+
+<span class="hljs-comment">/* Create a mutex that will protect temperature variables */</span>
+retc = pthread_mutex_init(&amp;temperatureMutex, <span class="hljs-keyword">NULL</span>);
+<span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+    <span class="hljs-comment">/* pthread_mutex_init() failed */</span>
+    <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+}
+
+<span class="hljs-comment">/* Initialize the GPIO since multiple threads are using it */</span>
+GPIO_init();
+</code></pre></div></div>
+</li>
+<li><p>If you are not feeling good about this steps cutting and pasting, you can cheat and import portable for FreeRTOS and just grab that main_freertos.c.</p>
+</li>
+</ol>
+<h2 id="bonus-task-7-build">Bonus Task 7: Build</h2>
+<p>Build and run! You've moved from TI-RTOS to FreeRTOS with a couple steps. To move from FreeRTOS to TI-RTOS, it's basically the opposite steps.</p>
+<div align="center" style="margin-top: 4em; font-size: smaller;">
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="../../web_support/cc_license_icon.png"></a><br>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.</div>
+
+</div><div class="col-xs-4 col-sm-2 sidebar-offcanvas bs-docs-sidebar hidden-print" id="sidebar-overview"><ul class="nav nav-stacked fixed" id="sidebar"><li><a href="#introduction">Introduction</a></li><li><a href="#prerequisites">Prerequisites</a><ul class="nav nav-stacked"><li><a href="#recommended-background-reading">Recommended Background Reading</a></li><li><a href="#software">Software</a></li><li><a href="#hardware">Hardware</a></li></ul></li><li><a href="#areas-of-potential-change-when-porting-an-application">Areas of potential change when porting an application</a><ul class="nav nav-stacked"><li><a href="#project-settings">Project Settings</a></li><li><a href="#rtos-configuration-project">RTOS Configuration Project</a></li><li><a href="#board-files">Board Files</a></li><li><a href="#other-target-code">Other Target Code</a></li></ul></li><li><a href="#porting-to-different-devices">Porting to Different Devices</a></li><li><a href="#task-1-import-portable-and-template-projects">Task 1: Import Portable and Template Projects</a></li><li><a href="#task-2-project-settings-changes">Task 2: Project Settings Changes</a></li><li><a href="#task-3-ti-rtos-configuration">Task 3. TI-RTOS Configuration</a></li><li><a href="#task-4-board-files">Task 4. Board Files</a></li><li><a href="#task-5-other-target-code">Task 5. Other Target Code</a></li><li><a href="#task-6-build-and-run-">Task 6. Build and Run!</a></li><li><a href="#caveats">Caveats</a></li><li><a href="#quiz">Quiz</a></li><li><a href="#bonus-task-switching-rtos">Bonus Task: Switching RTOS</a><ul class="nav nav-stacked"><li><a href="#bonus-task-1-import-projects">Bonus Task 1: Import Projects</a></li><li><a href="#bonus-task-2-update-project-settings">Bonus Task 2: Update Project Settings</a></li><li><a href="#bonus-task-3-change-rtos-configuration-project">Bonus Task 3: Change RTOS Configuration Project</a></li><li><a href="#bonus-task-4-board-files">Bonus Task 4: Board Files</a></li><li><a href="#bonus-task-5-update-depend-kernel-project">Bonus Task 5: Update Depend Kernel Project</a></li><li><a href="#bonus-task-7-build">Bonus Task 7: Build</a></li></ul></li></ul></div></div></div></div>
+
+
+
+
+<link rel="stylesheet" href="../../web_support/highlight/styles/zenburn.css">
+<script src="../../web_support/strapdown/vendor/jquery-1.11.2.min.js"></script>
+<script src="../../web_support/strapdown/vendor/bootstrap.min.js"></script>
+<script src="../../web_support/highlight/highlight.pack.js"></script>
+<script type="text/javascript">document.isPreRendered = true;</script><script src="../../web_support/strapdown/v/0.2/strapdown.js"></script>      <div class="modal" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">        <div class="vertical-alignment-helper">          <div class="modal-dialog vertical-align-center">             <div class="modal-dialog">               <div class="modal-content" style="margin-left: auto;margin-right: auto;">                 <div class="modal-body">                   <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>                   <img src="" class="imagepreview img-responsive">                 </div>              </div>            </div>          </div>        </div>      </div>
+
+
+</body></html>

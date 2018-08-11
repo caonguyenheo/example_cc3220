@@ -1,0 +1,4 @@
+{
+  "../../../modules/projects/ble_projectzero/ccs/desktop/project_zero_cc2640r2lp_app.projectspec": "spec_0.dependency.tirex.json",
+  "../../../modules/projects/ble_projectzero/ccs/desktop/project_zero_ble5_cc2640r2lp_app.projectspec": "spec_1.dependency.tirex.json"
+}

@@ -1,0 +1,199 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>SimpleLink SDK FreeRTOS Basics</title>
+<link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/ubuntu-regular-woff.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/glyphicons-halflings-regular.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/united2.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/bootstrap-responsive.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/strapdown.css"><link rel="shortcut icon" type="image/x-icon" href="../../.metadata/favicon.ico"></head>
+
+<!-- START PRE -->
+
+
+
+
+
+
+<!-- END PRE -->
+
+<body style=""><div class="container"><nav class="navbar navbar-default navbar-static-top"><div class="container-fluid"> <div class="navbar-header">  <div id="headline" class="navbar-brand">SimpleLink SDK FreeRTOS Basics</div> </div> </div></nav><div class="container"><div class="row row-offcanvas row-offcanvas-left"><div class="col-xs-12 col-sm-9" id="content"><h1 id="introduction">Introduction</h1>
+<p>The SimpleLink™ MSP432™ and Wi-Fi® CC3220 software development kits (SDKs) include the ability to use FreeRTOS™ (as well as the  TI-RTOS). This workshop will explain what this really means.</p>
+<p><strong>Here's what we'll learn:</strong></p>
+<ul>
+<li>How TI Drivers work with FreeRTOS</li>
+<li>POSIX support with FreeRTOS</li>
+<li>Understand parts of FreeRTOS kernel projects</li>
+</ul>
+<h1 id="prerequisites">Prerequisites</h1>
+<h2 id="recommended-background-reading">Recommended Background Reading</h2>
+<p>It is strongly recommend you are familiar with the following item.</p>
+<ul>
+<li><a href="../rtos_concepts/rtos_concepts.html">RTOS Concepts</a></li>
+</ul>
+<h1 id="freertos-installation">FreeRTOS Installation</h1>
+<p>Just to be very clear and not surprise you at the end, the FreeRTOS kernel is not bundled into the SimpleLink SDK. You'll need to download FreeRTOS yourself from  <a href="http://www.freertos.org">www.freertos.org</a>. Please refer to the <code>&lt;SimpleLink_SDK_Install_Dir&gt;/docs/Documentation_Overview.html</code> file to find the "SimpleLink SDK Quick Start Guide" for the recommended version and how to plug FreeRTOS into your IDE.</p>
+<h1 id="freertos-components-in-simplelink-sdk">FreeRTOS Components In SimpleLink SDK</h1>
+<p>This workshop will cover the following sections to help you get your application working with FreeRTOS and the SimpleLink SDK.</p>
+<ul>
+<li>POSIX support for FreeRTOS</li>
+<li>TI Drivers work with FreeRTOS</li>
+<li>Projects to build FreeRTOS kernel</li>
+<li>FreeRTOS examples</li>
+</ul>
+<p>Let's go into more details on each one of these items. We'll focus on CCS, but the same concepts apply to IAR and commandline makefiles.</p>
+<h2 id="posix-support">POSIX Support</h2>
+<p>Portable Operating System Interface (POSIX) is an IEEE industry API standard for OS compatibility. The SimpleLink SDK provides support for POSIX APIs on top of FreeRTOS (as it does for TI-RTOS). For a more details description of the POSIX support in SimpleLink SDKs, please refer to the <a href="../posix_project_zero/posix_project_zero.html">POSIX Overview Workshop</a>.</p>
+<h2 id="ti-drivers">TI Drivers</h2>
+<p>The TI Drivers (e.g. UART, I2C, Power Management, etc.) are written to be used with the Driver Porting Layer (DPL). The SimpleLink SDK includes a DPL implementation for both FreeRTOS and TI-RTOS.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/driver_levels_dpl.png" alt="" class="img-responsive"></div><p></p>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">DPL is not a full feature Operating System Abstraction Layer (OSAL).
+</span></h4>
+<p>It was developed specifically to meet the needs of the TI Drivers. Therefore it is not recommended that application code use the DPL interface directly. SimpleLink SDK reserves the right to change the DPL (and then all the driver implementations). For application code that wants OS abstraction, please use POSIX APIs, not DPL.</p>
+</div>
+<h2 id="other-simplelink-sdk-components-and-freertos">Other SimpleLink SDK Components and FreeRTOS</h2>
+<p>Here is a quick overview of some of the other SimpleLink SDK components works with FreeRTOS.</p>
+<ul>
+<li><strong>third_party\fatfs</strong>: Works with FreeRTOS</li>
+<li><strong>ti\display</strong>: Works with FreeRTOS</li>
+<li><strong>ti\grlib</strong>: Works with FreeRTOS but should only be used by one task as a time.</li>
+</ul>
+<h2 id="kernel-projects">Kernel Projects</h2>
+<p>The FreeRTOS kernel is built via a provided project. The examples that are FreeRTOS based (e.g. TI Drivers examples) point to the kernel project.</p>
+<p>In CCS and IAR, the kernel project requires that <code>FREERTOS_INSTALL_DIR</code> be defined. Please refer to the "SimpleLink SDK Quick Start Guide" for details on to set this up.</p>
+<div class="bs-callout bs-callout-danger "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Build failure
+</span></h4>
+<p>FREERTOS_INSTALL_DIR must be set to build any FreeRTOS example.</p>
+</div>
+<p>The SDK provides the kernel project in the kernel/freertos/builds/<em>BOARD</em>/release directory.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/kernel_directory.png" alt="" class="img-responsive"></div><p></p>
+<p>The configuration of the FreeRTOS kernel is done in the FreeRTOSConfig.h file.</p>
+<p>The kernel project is automatically imported when a FreeRTOS example is imported. A copy of the kernel project is made in the workspace.</p>
+<p>Alternatively, this project can be imported into CCS by selection <strong>Project → Import CCS Projects...</strong> and navigating to the <code>&lt;SimpleLink_SDK_Install_Dir&gt;/kernel/freertos/builds</code> directory. Then select the desired board and compiler project.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/import_kernel.png" alt="" class="img-responsive"></div><p></p>
+<p>Here is what the imported kernel project looks like. You see the FreeRTOSConfig.h file. The <code>dpl</code> and <code>posix</code> directories contain the files in the SimpleLink SDK to support those features. The <code>freertos</code> directory contains files in the FreeRTOS installation (which FREERTOS_INSTALL_DIR points to).</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/imported_project.png" alt="" class="img-responsive"></div><p></p>
+<p>The result of building this project is a library that can be used for building the FreeRTOS based examples.</p>
+<p>For more details on how to change or create new FreeRTOS kernel projects, please refer to the "SimpleLink SDK User Guide".</p>
+<h2 id="examples">Examples</h2>
+<p>Many examples (e.g. TI Drivers examples) are available in both FreeRTOS and TI-RTOS. When a example is imported, the kernel project is automatically imported also. Here is a picture of the projects when <code>empty</code> was imported.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/imported_example.png" alt="" class="img-responsive"></div><p></p>
+<p>The empty project points to the kernel project via the <strong>Project Properties → Build → Dependencies</strong> setting. Please refer to the "SimpleLink SDK User Guide" for more details on the management of this setting.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/dependent_project.png" alt="" class="img-responsive"></div><p></p>
+<p>There are no native FreeRTOS examples in the SimpleLink SDK. Instead the POSIX layer is used to allow examples to be used with TI-RTOS or FreeRTOS. All the FreeRTOS specific code is in <code>main_freertos.c</code> file (there is a <code>main_tirtos.c</code> file for TI-RTOS based examples). The majority of the file contains POSIX APIs, but at the end of <code>main()</code>, the call to start the FreeRTOS scheduler (<code>vTaskStartScheduler()</code>) is made.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/main_freertos.png" alt="" class="img-responsive"></div><p></p>
+<p>Additionally, the <code>main_freertos.c</code> file contains FreeRTOS hook functions.</p>
+<p>The linker command file is slightly different from the TI-RTOS one also. The two set up the dynamic heap slightly differently in the linker file.</p>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">POSIX is not required for FreeRTOS
+</span></h4>
+<p>Even though all the FreeRTOS examples use POSIX in the SimpleLink SDK, it is not required. This was done to make sure the examples worked for both operating systems. You can use the native FreeRTOS APIs instead if you prefer. Please refer to the <code>demos\portable</code> and <code>demos\portableNative</code> examples to see a comparison of using POSIX vs the native RTOS APIs.</p>
+</div>
+<h1 id="lab-getting-started">Lab: Getting started</h1>
+<p>This lab will explore some of the configuration parameters of FreeRTOS.</p>
+<h2 id="software">Software</h2>
+<ul>
+<li>CCS as specified by your SimpleLink SDK Release Notes (CCS Cloud is also possible, but the steps below will assume you are using the desktop CCS)</li>
+<li>Any SimpleLink SDK </li>
+</ul>
+<h2 id="hardware">Hardware</h2>
+<ul>
+<li>Any supported SimpleLink LaunchPad™ Development Kit</li>
+</ul>
+<h1 id="task-1-import-freertos-empty-driver-project">Task 1: Import FreeRTOS Empty Driver Project</h1>
+<p>In Resource Explorer, import the FreeRTOS empty example in examples/rtos/<em>Board</em>/drivers/empty directory. You can select either gcc or ccs.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/import_empty.png" alt="" class="img-responsive"></div><p></p>
+<h1 id="task-2-add-a-bogus-malloc-">Task 2: Add a bogus <code>malloc()</code></h1>
+<p>In <code>main_freertos.c</code> after <code>Board_initGeneral()</code> add an allocation of a very large size (e.g. <code>malloc(0x80000)</code>).</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_1')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_1" class="lang-c hljs cpp">    <span class="hljs-comment">/* Call driver init functions */</span>
+    Board_initGeneral();
+
+    <span class="hljs-keyword">char</span> *buf;
+    buf = <span class="hljs-built_in">malloc</span>(<span class="hljs-number">0x80000</span>);
+</code></pre><span class="code-title"><p>main_freertos.c</p>
+</span></div></div>
+<h1 id="task-3-build">Task 3: Build</h1>
+<p>Build and load the project. Before you run, set a hardware breakpoint in the <code>vApplicationMallocFailedHook()</code> function in <code>main_freertos.c</code>.</p>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">If you do not have the FREERTOS_INSTALL_DIR set you'll get a build error. 
+</span></h4>
+<p>Please refer to the "SimpleLink SDK Quick Start Guide" for details on to set this up.</p>
+</div>
+<h1 id="task-4-run">Task 4: Run</h1>
+<p>Run the application. You should be in <code>vApplicationMallocFailedHook()</code> now.</p>
+<blockquote>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/malloc_failed_breakpoint.png" alt="" class="img-responsive"></div><p></p>
+</blockquote>
+<p>What happened? You tried to allocate too big of a block of memory and the malloc falled. The <code>configUSE_MALLOC_FAILED_HOOK</code> is set to 1 in <code>FreeRTOSConfig.h</code> in the FreeRTOS kernel project.</p>
+<blockquote>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/malloc_setting.png" alt="" class="img-responsive"></div><p></p>
+</blockquote>
+<p>Therefore, if an allocation failure occurs, the <code>vApplicationMallocFailedHook()</code> is called.</p>
+<h1 id="task-5-remove-the-hook-function">Task 5: Remove the hook function</h1>
+<p>Edit the <code>FreeRTOSConfig.h</code> file in the FreeRTOS kernel project and change <code>configUSE_MALLOC_FAILED_HOOK</code> to 0.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_2')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_2" class="lang-c hljs cpp"><span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> configUSE_MALLOC_FAILED_HOOK    0</span>
+</code></pre><span class="code-title"><p>FreeRTOSConfig.h</p>
+</span></div></div>
+<h1 id="task-6-build-and-run">Task 6: Build and run</h1>
+<p>Build and load the empty project. Now step over the <code>malloc()</code> call and you see that</p>
+<ol>
+<li>The hook function was not called.</li>
+<li>The <code>malloc()</code> call returned NULL.</li>
+</ol>
+<h1 id="quiz">Quiz</h1>
+<p>Let's see if you picked up some key points...</p>
+<p>TI Drivers can be used with FreeRTOS?</p>
+<div class="quiz-toolbar"><div>
+<input type="radio" id="q1.0" class="answer-right" name="quiz-1"><label for="q1.0" class="quiz-label ">Yes</label>
+<input type="radio" id="q1.1" class="answer-wrong" name="quiz-1"><label for="q1.1" class="quiz-label " data-toggle="tooltip" data-html="true" data-container="body" data-placement="auto top" data-trigger="click" title="" data-original-title="&lt;p&gt; TI Drivers work with FreeRTOS&lt;/p&gt;
+">No </label>
+</div></div>
+<p>To use FreeRTOS, do you have to use POSIX?</p>
+<div class="quiz-toolbar"><div>
+<input type="radio" id="q2.2" class="answer-wrong" name="quiz-2"><label for="q2.2" class="quiz-label " data-toggle="tooltip" data-html="true" data-container="body" data-placement="auto top" data-trigger="click" title="" data-original-title="&lt;p&gt; You are not required, but using POSIX allows your application to be OS-agnostic.&lt;/p&gt;
+">Yes </label>
+<input type="radio" id="q2.3" class="answer-right" name="quiz-2"><label for="q2.3" class="quiz-label ">No</label>
+</div></div>
+<p>Can you change the FreeRTOSConfig.h file to tailor the kernel to your needs?</p>
+<div class="quiz-toolbar"><div>
+<input type="radio" id="q3.4" class="answer-right" name="quiz-3"><label for="q3.4" class="quiz-label " data-toggle="tooltip" data-html="true" data-container="body" data-placement="auto top" data-trigger="click" title="" data-original-title="&lt;p&gt; Yes you can. Please note the the provided FreeRTOSConfig.h file was used for all regression testing though.&lt;/p&gt;
+">Yes </label>
+<input type="radio" id="q3.5" class="answer-wrong" name="quiz-3"><label for="q3.5" class="quiz-label " data-toggle="tooltip" data-html="true" data-container="body" data-placement="auto top" data-trigger="click" title="" data-original-title="&lt;p&gt; You can change the file as needed.&lt;/p&gt;
+">No </label>
+</div></div>
+<p>Should application code use DPL directly?</p>
+<div class="quiz-toolbar"><div>
+<input type="radio" id="q4.6" class="answer-wrong" name="quiz-4"><label for="q4.6" class="quiz-label " data-toggle="tooltip" data-html="true" data-container="body" data-placement="auto top" data-trigger="click" title="" data-original-title="&lt;p&gt; DPL is OS abstraction for just the TI Drivers. You should not use it directly.&lt;/p&gt;
+">Yes </label>
+<input type="radio" id="q4.7" class="answer-right" name="quiz-4"><label for="q4.7" class="quiz-label ">No</label>
+</div></div>
+<h1 id="additional-resources">Additional Resources</h1>
+<p>Additional training and reference material for FreeRTOS is available in the following places:</p>
+<h2 id="general-freertos-support">General FreeRTOS Support</h2>
+<ul>
+<li><a href="http://www.freertos.org/">www.freertos.org</a></li>
+</ul>
+<h2 id="simplelink-academy">SimpleLink Academy</h2>
+<ul>
+<li><a href="../rtos_concepts/rtos_concepts.html">RTOS Basics</a></li>
+<li><a href="../posix_project_zero/posix_project_zero.html">POSIX Overview Workshop</a></li>
+<li><a href="../ti_drivers_porting/ti_drivers_porting.html">Porting Workshop</a></li>
+</ul>
+<h2 id="simplelink-sdk">SimpleLink SDK</h2>
+<ul>
+<li>SimpleLink SDK Quick Start Guide</li>
+<li>SimpleLink SDK User Guide</li>
+</ul>
+<h2 id="forums">Forums</h2>
+<ul>
+<li><a href="http://e2e.ti.com/">e2e.ti.com forums</a></li>
+</ul>
+<div align="center" style="margin-top: 4em; font-size: smaller;">
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="../../web_support/cc_license_icon.png"></a><br>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.</div>
+
+</div><div class="col-xs-4 col-sm-2 sidebar-offcanvas bs-docs-sidebar hidden-print" id="sidebar-overview"><ul class="nav nav-stacked fixed" id="sidebar"><li><a href="#introduction">Introduction</a></li><li><a href="#prerequisites">Prerequisites</a><ul class="nav nav-stacked"><li><a href="#recommended-background-reading">Recommended Background Reading</a></li></ul></li><li><a href="#freertos-installation">FreeRTOS Installation</a></li><li><a href="#freertos-components-in-simplelink-sdk">FreeRTOS Components In SimpleLink SDK</a><ul class="nav nav-stacked"><li><a href="#posix-support">POSIX Support</a></li><li><a href="#ti-drivers">TI Drivers</a></li><li><a href="#other-simplelink-sdk-components-and-freertos">Other SimpleLink SDK Components and FreeRTOS</a></li><li><a href="#kernel-projects">Kernel Projects</a></li><li><a href="#examples">Examples</a></li></ul></li><li><a href="#lab-getting-started">Lab: Getting started</a><ul class="nav nav-stacked"><li><a href="#software">Software</a></li><li><a href="#hardware">Hardware</a></li></ul></li><li><a href="#task-1-import-freertos-empty-driver-project">Task 1: Import FreeRTOS Empty Driver Project</a></li><li><a href="#task-2-add-a-bogus-malloc-">Task 2: Add a bogus malloc()</a></li><li><a href="#task-3-build">Task 3: Build</a></li><li><a href="#task-4-run">Task 4: Run</a></li><li><a href="#task-5-remove-the-hook-function">Task 5: Remove the hook function</a></li><li><a href="#task-6-build-and-run">Task 6: Build and run</a></li><li><a href="#quiz">Quiz</a></li><li><a href="#additional-resources">Additional Resources</a><ul class="nav nav-stacked"><li><a href="#general-freertos-support">General FreeRTOS Support</a></li><li><a href="#simplelink-academy">SimpleLink Academy</a></li><li><a href="#simplelink-sdk">SimpleLink SDK</a></li><li><a href="#forums">Forums</a></li></ul></li></ul></div></div></div></div>
+
+
+
+
+<link rel="stylesheet" href="../../web_support/highlight/styles/zenburn.css">
+<script src="../../web_support/strapdown/vendor/jquery-1.11.2.min.js"></script>
+<script src="../../web_support/strapdown/vendor/bootstrap.min.js"></script>
+<script src="../../web_support/highlight/highlight.pack.js"></script>
+<script type="text/javascript">document.isPreRendered = true;</script><script src="../../web_support/strapdown/v/0.2/strapdown.js"></script>      <div class="modal" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">        <div class="vertical-alignment-helper">          <div class="modal-dialog vertical-align-center">             <div class="modal-dialog">               <div class="modal-content" style="margin-left: auto;margin-right: auto;">                 <div class="modal-body">                   <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>                   <img src="" class="imagepreview img-responsive">                 </div>              </div>            </div>          </div>        </div>      </div>
+
+
+</body></html>

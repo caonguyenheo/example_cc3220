@@ -1,0 +1,382 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>Wi-Fi Over-The-Air</title>
+<link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/ubuntu-regular-woff.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/glyphicons-halflings-regular.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/united2.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/bootstrap-responsive.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/strapdown.css"><link rel="shortcut icon" type="image/x-icon" href="../../.metadata/favicon.ico"></head>
+
+<!-- START PRE -->
+
+
+
+
+
+
+<!-- END PRE -->
+
+<body style=""><div class="container"><nav class="navbar navbar-default navbar-static-top"><div class="container-fluid"> <div class="navbar-header">  <div id="headline" class="navbar-brand">Wi-Fi Over-The-Air</div> </div> </div></nav><div class="container"><div class="row row-offcanvas row-offcanvas-left"><div class="col-xs-12 col-sm-9" id="content"><h1 id="introduction">Introduction</h1>
+<p>This workshop demonstrates how to use the SimpleLink™ Wi-Fi® Over-The-Air (OTA) library.
+The library can be used to wirelessly load and install software updates from a cloud server.
+A software update may contain any combination of application code, firmware, and user files.</p>
+<p>This workshop will start with an overview of the OTA mechanism and then walk through the bring up of two OTA examples:</p>
+<ol>
+<li>Using the Cloud OTA example to load and update a pre-built image</li>
+<li>Preparing an OTA update, uploading it to the cloud, and loading it with the Cloud OTA example.</li>
+</ol>
+<p>At the end of this training, the audience should be able to:</p>
+<ul>
+<li>Understand the OTA process and the SimpleLink Wi-Fi solution</li>
+<li>Configure, build, and execute the SimpleLink <code>cloud_ota</code> application and OTA library (<code>ota</code>) on the CC3220 LaunchPad</li>
+<li>Create an OTA update image and upload it to a CDN (Content Delivery Network) Server</li>
+</ul>
+<h1 id="prerequisites">Prerequisites</h1>
+<h2 id="completed-material">Completed material</h2>
+<ul>
+<li><a href="../wifi_provisioning/wifi_provisioning.html">Wi-Fi Provisioning: Connecting SimpleLink Wi-Fi Technology to a Network</a></li>
+</ul>
+<h2 id="software">Software</h2>
+<ul>
+<li><a href="http://www.ti.com/tool/ccstudio">Code Composer Studio</a> v7.4 or later<ul>
+<li>Must have SimpleLink CC3xxx Wireless support</li>
+<li>Make sure that CCS is using the latest updates: <strong>Help → Check for Updates</strong></li>
+</ul>
+</li>
+<li><a href="http://www.ti.com/tool/simplelink-cc3220-sdk">CC3220 SDK v1.60.00.04</a> or later</li>
+<li><a href="http://www.ti.com/tool/UNIFLASH">UniFlash</a> v4.2.1.15 or later.</li>
+<li>Terminal emulator program such as TeraTerm or PuTTY</li>
+</ul>
+<h2 id="hardware">Hardware</h2>
+<ul>
+<li>CC3220S or CC3220SF LaunchPad (<a href="http://www.ti.com/tool/cc3220s-launchxl">CC3220S-LAUNCHXL</a> or <a href="http://www.ti.com/tool/cc3220sf-launchxl">CC3220SF-LAUNCHXL</a>)</li>
+<li>1x Micro-USB cable (included with LaunchPad/BoosterPack)</li>
+<li>802.11b/g/n (2.4-GHz) Wireless Access Point (AP)</li>
+<li>Smartphone with <a href="http://www.ti.com/tool/wifistarterpro">Wi-Fi Starter Pro Mobile Application</a></li>
+</ul>
+<h1 id="ota-overview">OTA Overview</h1>
+<h2 id="ota-concept">OTA Concept</h2>
+<ul>
+<li>OTA (Over-The-Air) update is an efficient way of wirelessly distributing firmware updates or application upgrades.</li>
+<li>An OTA Update mechanism enables users to easily and securely update the software on their device using Wi-Fi. This involves two simple procedures:<ul>
+<li>A vendor stores an OTA update on a CDN (Content Delivery Network) server.</li>
+<li>The endpoint devices with an OTA-enabled application load and install the new update.</li>
+</ul>
+</li>
+<li>An OTA-enabled application must support all of the following actions:<ul>
+<li>Polling the CDN (Content Delivery Network) server for new updates</li>
+<li>Downloading the new image</li>
+<li>Installing the image on the flash file system in a secured and fail-safe manner (the new image becomes a "candidate")</li>
+<li>Committing the image after it is validated (making it "operational")</li>
+</ul>
+</li>
+<li>The SimpleLink OTA library offloads the above OTA actions and provides a simple API for the application.</li>
+</ul>
+<h2 id="ota-system-diagram">OTA System Diagram</h2>
+<div class="alert alert-info float-right"><p><strong>API</strong>: Application Program Interface<br>
+<strong>CDN</strong>: Content Delivery Network<br>
+<strong>MCU</strong>:  Microcontroller Unit<br>
+<strong>NWP</strong>: Network Processor<br>
+<strong>OTA</strong>: Over The Air<br>
+<strong>PCB</strong>: Printed Circuit Board</p>
+</div>
+<ul>
+<li><strong>CDN (Content Delivery Network)</strong>: Globally distributed network of proxy servers deployed in multiple data centers. The goal of a CDN is to serve content to end-users with high availability and high performance. Examples would be Dropbox or GitHub.</li>
+<li><strong>OTA library</strong>: Offloads the OTA actions (such as polling the server, downloading the updates and installing them in the local flash) while exposing a simple API.</li>
+<li><strong>OTA-enabled Application</strong>: Triggers the OTA library and respond to OTA events. The application will take decisions whether to accept or decline an update (usually based on timestamp) and whether to commit or rollback the already installed image (based on a sanity check).
+  <div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_system_bd.png" alt="" class="img-responsive"></div></li>
+</ul>
+<h2 id="simplelink-ota-library-ota-">SimpleLink OTA Library (<code>ota</code>)</h2>
+<ul>
+<li>The OTA library implements a simple HTTP client that connects to CDN server (through <code>CdnVendor</code> and <code>OtaHttpClient</code> modules).</li>
+<li>The HTTP client can be configured as:<ul>
+<li>Non Secured (connects to CDN running HTTP Server)</li>
+<li>Secured (HTTPS server) using server authentication (by default)</li>
+<li>Domain Name verification (default) or without server authentication.</li>
+</ul>
+</li>
+<li>The OTA library supports the following cloud CDN vendors:<ul>
+<li>Github (demonstrated in the first demo)</li>
+<li>Dropbox (demonstrated in the second demo)</li>
+<li>Custom</li>
+</ul>
+</li>
+<li>The library defines a structure for the OTA image in a tar file. The UniFlash ImageCreator tool can be used to create an OTA tar file so that the OTA library will be able to parse the loaded content and install it on local flash file system in secure and fail-safe manner (through the <code>OtaArchive</code> and <code>OtaJson</code> modules)</li>
+<li>The OTA library is provided as a static library project with full source code to enable user customizations.
+  <div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_software_bd.png" alt="" class="img-responsive"></div></li>
+</ul>
+<h2 id="ota-library-api">OTA Library API</h2>
+<p>The OTA library exposes very simple API set:</p>
+<ul>
+<li><code>OTA_init()</code>: Initializes the OTA library. The host application should define a global buffer for the use of the OTA library and provide this buffer while it initiates the OTA.</li>
+<li><code>OTA_set()</code>: Sets an OTA library parameter. Used to set CDN Server information and to update the status of the loaded image (<code>DECLINE</code>, <code>ACCEPT</code>, <code>COMMIT</code> or <code>ROLLBACK</code>).</li>
+<li><code>OTA_get()</code>: Retrieves an OTA library parameters, e.g. <code>IS_ACTIVE</code> or <code>VERSIONS</code> info (current image version and new update version).</li>
+<li><code>OTA_run()</code>: Trigger the OTA library state machine. This will trigger OTA polling, download, etc. It should be called repeatedly until it gets the <code>DOWNLOAD_DONE</code> return code.</li>
+</ul>
+<p>This API set is compatible with both non-OS and OS-based platforms.</p>
+<h2 id="ota-sample-application">OTA Sample Application</h2>
+<ul>
+<li>The first role of an OTA-enabled application is to verify and commit a "candidate" image that was previously installed to local flash.<ul>
+<li>Once the device is connected to the network and can successfully PING to the local gateway, the application assumes the image is okay.</li>
+<li>If the OTA state is <code>PENDING_COMMIT</code>, the application will commit the image.</li>
+</ul>
+</li>
+<li>The second role of the application is to look for a new update.<ul>
+<li>Server info is defined in compile time (in <code>otauser.h</code>).</li>
+<li>App repeatedly calls <code>OtaRun()</code> until OTA process is completed.</li>
+<li>App decides to accept or decline a new update based on its timestamp.</li>
+<li>An accepted update will be written to flash as a "candidate" which will be verified after the MCU gets reset.
+<div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_example_fc.png" alt="" class="img-responsive"></div></li>
+</ul>
+</li>
+</ul>
+<h1 id="loading-a-pre-built-ota-image">Loading A Pre-Built OTA Image</h1>
+<p>The following section will walk you through the steps needed to run the <code>cloud_ota</code> sample application using the CC3220 LaunchPad. This example is run using the <code>cloud_ota_CC3220SF_LAUNCHXL_tirtos_ccs</code> source code example found within the CC3220 SDK. These instructions should work for the FreeRTOS example as well. This demonstration uses the OTA sample application to load and install a pre-built image that is located on a Github CDN server. It focuses on the configuration of the OTA application.</p>
+<h2 id="task-1-preparing-the-ota-application">Task 1: Preparing the OTA application</h2>
+<ol>
+<li><p>In CCS, import the <code>cloud_ota_CC3220SF_LAUNCHXL_tirtos_ccs</code> example (<code>simplelink_cc32xx_sdk_x_xx_xx_xx/examples/rtos/CC3220SF_LAUNCHXL/demos/cloud_ota/tirtos/ccs</code>). You also must import the <code>ota</code> project found in <code>simplelink_cc32xx_sdk_x_xx_xx_xx/source/ti/net/ota/ccs</code>. This is the supporting OTA library.</p>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">CC3220S LaunchPad
+</span></h4>
+<p> If you are using a CC3220S LaunchPad, assume all given folder and code instructions can be changed from <code>CC3220SF</code> to <code>CC3220S</code>. For example, here you should import the <code>cloud_ota_CC3220S_LAUNCHXL_tirtos_ccs</code> example from <code>simplelink_cc32xx_sdk_x_xx_xx_xx/examples/rtos/CC3220S_LAUNCHXL/demos/cloud_ota/tirtos/ccs</code>. The <code>ota</code> library project works for both LaunchPads.</p>
+</div>
+</li>
+<li><p>In <code>otauser.h</code> of the <code>ota</code> project, update the CDN server parameters:</p>
+<ul>
+<li>Use the following parameters for accessing the pre-defined image on the Github server:<ul>
+<li><code>#define OTA_SERVER_TYPE</code> &nbsp; <code>OTA_SERVER_GITHUB</code></li>
+<li><code>#define OTA_VENDOR_DIR</code> &nbsp; <code>"SEC_OTA_CC3220SF"</code></li>
+</ul>
+</li>
+<li>The following definitions are under GITHUB section:<ul>
+<li><code>#define OTA_VENDOR_ROOT_DIR</code> &nbsp; <code>"/repos/SimpleLink/CC3X20"</code></li>
+<li><code>#define OTA_VENDOR_TOKEN</code> &nbsp; <code>"SimpleLink"</code></li>
+</ul>
+</li>
+<li>We will find the correct value for <code>OTA_SERVER_ROOT_CA_CERT</code> in the next task.</li>
+<li><p>Optionally, you may uncomment the following definition to enable the OTA library traces:</p>
+<ul>
+<li><code>#define SL_ENABLE_OTA_DEBUG_TRACES</code></li>
+</ul>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_servergithub.png" alt="" class="img-responsive"></div><p></p>
+</li>
+</ul>
+</li>
+<li><p>Update the JSON buffer size for storing the long GitHub URL. In the <code>ota</code> project, open the <code>OtaJson.c</code> file and update the <code>MAX_METADATA_FILENAME</code> definition to reserve room for the long Github URL name.</p>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_json_defs.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>If you see yellow warning icons under the <code>OTA/CdnVendors/</code> folder in your <code>ota</code> project, you'll need to update the path for each of the files before the project will compile.</p>
+<ul>
+<li>In your <code>ota</code> project, open the properties (<strong>Left click → Properties</strong>) and navigate under <strong>Resource</strong> to <strong>Linked Resources</strong> and the <strong>Linked Resources</strong> tab.</li>
+<li>For each file with an invalid location, select the file and press the <strong>Edit</strong> button to replace the <code>PROJECT_LOC</code> project variable with <code>ORIGINAL_PROJECT_ROOT</code>.</li>
+<li><p>Be sure to press <strong>OK</strong> to save your changes. The warning symbol next to each file should disappear and you will be able to compile the library.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_linkedresources.png" alt="" class="img-responsive"></div><p></p>
+</li>
+</ul>
+</li>
+<li><p>You will need to link your <code>cloud_ota</code> application to your new <code>ota</code> library. In the <code>cloud_ota</code> project, go to <strong>Properties → Build → ARM Linker → File Search Path → Include library file...</strong> and change the <code>ota.a</code> reference to <code>${WORKSPACE_LOC}/ota/Release/ota.a</code>. This will link to the OTA library built in your CCS workspace.</p>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/link_otalibrary.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>Rebuild the <code>ota</code> project <strong>then</strong> rebuild the <code>cloud_ota</code> project.</p>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Rebuilding the OTA library
+</span></h4>
+<p> You will need to rebuild the <code>ota</code> library and <code>cloud_ota</code> example after every change to <code>otauser.h</code>.</p>
+</div>
+</li>
+</ol>
+<h2 id="task-2-finding-a-root-certificate">Task 2: Finding a Root Certificate</h2>
+<ol>
+<li><p>In this step, we will find the Certificate Common Name necessary to pass GitHub's SSL authentication. We will install this certificate (in DER format) as a user file in the device flash. To find the most up-to-date Root CA certificate, add the following code in the <code>else-if</code> statement of <code>SimpleLinkSockEventHandler</code> in <code>cloud_ota.c</code>.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_1')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_1" class="lang-c hljs cpp"> <span class="hljs-keyword">switch</span> (pSock-&gt;SocketAsyncEvent.SockAsyncData.Type)
+ {
+     <span class="hljs-keyword">case</span> SL_SSL_NOTIFICATION_WRONG_ROOT_CA:
+         <span class="hljs-comment">/* on socket error Restart OTA */</span>
+         UART_PRINT(<span class="hljs-string">"SL_SOCKET_ASYNC_EVENT: ERROR - WRONG ROOT CA\n\r"</span>); 
+         UART_PRINT(<span class="hljs-string">"Please install the following Root Certificate:\n\r"</span>);
+         UART_PRINT(<span class="hljs-string">"  %s\n\r"</span>, pSock-&gt;SocketAsyncEvent.SockAsyncData.pExtraInfo);
+         SignalEvent(APP_EVENT_RESTART);
+         <span class="hljs-keyword">break</span>;
+
+     <span class="hljs-keyword">default</span>:
+         <span class="hljs-comment">/* on socket error Restart OTA */</span>
+         UART_PRINT(<span class="hljs-string">"SL_SOCKET_ASYNC_EVENT socket event %d, do restart\n\r"</span>, pSock-&gt;Event);
+         SignalEvent(APP_EVENT_RESTART);
+         <span class="hljs-keyword">break</span>;
+ }
+</code></pre><span class="code-title"><p><strong>cloud_ota.c :: SimpleLinkSockEventHandler()</strong> - Else-if statement</p>
+</span></div></div>
+<p> It should now look like this:</p>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_sockeventhandler.png" alt="" class="img-responsive"></div><p></p>
+<div class="bs-callout bs-callout-danger "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Error code -688
+</span></h4>
+<p> In the case you do not have the correct CA certificate (or use a different CDN server), the HTTPS connection setup will fail. If the HTTPS connection to the CDN server fails due to an incorrect root certificate, the return value will be -688. You will need to find and install the right certificate.</p>
+</div>
+</li>
+<li><p>Open a terminal emulation program and select the XDS110 Class Application/User UART port.</p>
+<div class="alert alert-warning "><p> <strong>UART Configuration</strong><br>
+ Baud rate: 115200<br>
+ Data: 8 bit<br>
+ Parity: None<br>
+ Stop: 1 bit<br>
+ Flow control: None</p>
+</div>
+</li>
+<li><p>Rebuild the <code>ota</code> project <strong>then</strong> rebuild the <code>cloud_ota</code> project. Run the <code>cloud_ota</code> application using the CCS Debugger. The example begins by starting the device in station mode and looks for an available network.</p>
+<p> The screen capture demonstrates the case that a device cannot find a known access-point and enters the provisioning mode. For more information on provisioning, see the <a href="../wifi_provisioning/wifi_provisioning.html">Wi-Fi Provisioning</a> training.</p>
+<p>     </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_terminal_2.png" alt="" class="img-responsive"></div><p></p>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Issues with CCS Debugger
+</span></h4>
+<p> Your device will need to be in Development mode to use the CCS debugger. For more details on this, see the <a href="http://www.ti.com/lit/swru461">CC3220 Getting Started Guide</a>.</p>
+</div>
+</li>
+<li><p>The screenshot below shows a successful AP connection, followed by successful PING sessions. Now you can press button 2 (SW2) on the board to trigger the OTA process.</p>
+<p> Note that the following log was taken after <code>SL_ENABLE_OTA_DEBUG_TRACES</code> was enabled (in <code>ota/ota_user.h</code>) so it includes extra OTA messages.
+     </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_terminal_3.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>When the LaunchPad attempts the OTA process, you will see an error message similar to the following screenshot. Make note of the complete name printed after <code>Please install the following Root CA Certificate:</code>.</p>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_terminal_1.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>You can search this certificate name online and download it, or you can find it using your browser's settings. For example in Chrome, go to <strong>Settings → Advanced → Manage Certificates → Trusted Root Certification Authorities</strong>. If your browser has navigated to github.com before, search in the list for the certificate name we printed to the terminal earlier. Export it in DER format.</p>
+</li>
+<li><p>Update the <code>OTA_SERVER_ROOT_CA_CERT</code> definition in <code>ota/otauser.h</code>. This is similar to the step we completed in task 1.</p>
+</li>
+</ol>
+<h2 id="task-3-complete-an-ota-update">Task 3: Complete an OTA Update</h2>
+<ol>
+<li><p>Create a new CC3220 UniFlash ImageCreator project and set the CC3220 to Development mode. Add the entire "dummy" certificate chain (i.e. <code>dummy-trusted-cert</code>, <code>dummy-trusted-ca-cert</code> and <code>dummy-root-ca-cert</code>), playground Trusted Root-Certificate Catalog, and latest service pack. This is shown in detail in <strong>section 2.4</strong> and steps 1-4 of <strong>section 2.4.1</strong> of the <a href="http://www.ti.com/lit/swru461">SimpleLink Wi-Fi CC3220 Getting Started Guide</a>.</p>
+</li>
+<li><p>Add the Root CA certificate (in DER format) that we found earlier as a user file.</p>
+</li>
+<li><p>Add the demo OTA public key certificate <code>dummy_ota_vendor_cert.der</code> as a user file. This is available in <code>simplelink_cc32xx_sdk_x_xx_xx_xx/tools/cc32xx_tools/ota-example-cert/</code>. This certificate will be used to authenticate a pre-built secure OTA image signed by the corresponding private key for this lab.</p>
+<p> The default certificate name is defined by <code>OTA_CERTIFICATE_NAME</code> in <code>OtaArchive.c</code>. (If a different certificate is used, the <code>OTA_CERTIFICATE_NAME</code> definition should be updated</p>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_archive_defs.png" alt="" class="img-responsive"></div><p></p>
+<p> We will learn how to generate a key pair and use UniFlash to sign the OTA image with the private key in the next section of this lab: Preparing an OTA Image.</p>
+</li>
+<li><p><strong>Connect</strong> the LaunchPad and <strong>Generate</strong> and <strong>Program</strong> the image.</p>
+</li>
+<li><p>Rebuild the <code>ota</code> project <strong>then</strong> rebuild the <code>cloud_ota</code> project. Open a terminal emulation program as before. Run the <code>cloud_ota</code> application using the CCS Debugger.</p>
+</li>
+<li><p>The capture below shows the successful completion of OTA process. Note that the screenshot below skipped most of the OTA messages (dealing with CDN server connection, downloading content, parsing and installing it). This log below shows the flash programming messages, the platform reset, and the activation of the newly programmed image (this example pre-built image contains a version of the <code>OTA_NONOS</code> application). After the first successful ping session, the temporary image gets committed.</p>
+<div class="bs-callout bs-callout-success "><h4><span class="glyphicon glyphicon-ok-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Results
+</span></h4>
+<ul>
+<li>The OTA tar file name contains the timestamp (date and hour) of its creation. Only an update with a newer timestamp than the one currently stored in flash will be loaded and installed.</li>
+<li><p>The first OTA update after using UniFlash ImageCreator will always work since it does not program any timestamp.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_terminal_4.png" alt="" class="img-responsive"></div><p></p>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+<h1 id="preparing-an-ota-image">Preparing An OTA Image</h1>
+<p>The following section will discuss the steps needed to run the Cloud OTA sample application using the CC3220 LaunchPad. This example is run using the <code>cloud_ota_CC3220SF_LAUNCHXL_tirtos_ccs</code> source code example. This demonstration is focused on creation of an OTA image.</p>
+<ul>
+<li>Compiling an MCU image and packaging it within an OTA update (tar file)</li>
+<li>Uploading OTA content to user account on a CDN server (DropBox)</li>
+<li>Configuring the <code>cloud_ota</code> with the user account parameters</li>
+</ul>
+<h2 id="task-4-compiling-and-creating-the-ota-image">Task 4: Compiling and Creating the OTA Image</h2>
+<p>This task focuses on the generation of an OTA image. The image will contain an updated MCU application which will be based on the <code>cloud_ota</code> application.</p>
+<ol>
+<li><p>In <code>cloud_ota.h</code>, update the <code>APPLICATION_NAME</code> definition to <code>"OTA APP (EX-2 Image)"</code> as shown below and rebuild the project. We will only change the application name (the name will help us differentiate between the current app and the updated one).</p>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_applicationname.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>Create a new CC3220 UniFlash ImageCreator project. Add the entire "dummy" certificate chain (i.e. <code>dummy-trusted-cert</code>, <code>dummy-trusted-ca-cert</code> and <code>dummy-root-ca-cert</code>), playground Trusted Root-Certificate Catalog, and latest service pack. This is shown in detail in <strong>section 2.4</strong> and steps 1-4 of <strong>section 2.4.1</strong> of the <a href="http://www.ti.com/lit/swru461">SimpleLink Wi-Fi CC3220 Getting Started Guide</a>.</p>
+</li>
+<li><p>Add any additional user files. You will need a certificate for the CDN server following the steps in task 2 and 3. For this demo, we are using DropBox.</p>
+</li>
+<li><p>Add your newly compiled binary (<code>cloud_ota_CC3220SF_LAUNCHXL_tirtos_ccs.bin</code>) as a MCU image. You can find this binary in your workspace (<code>&lt;workspace&gt;/cloud_ota_CC3220SF_LAUNCHXL_tirtos_ccs/Debug/</code>)</p>
+<div class="bs-callout bs-callout-warning "><h4><span style="vertical-align: middle;">Signing the MCU Image on a secure device
+</span></h4>
+<p> For detailed steps, see the <a href="http://www.ti.com/lit/swru461">CC3220 Getting Started Guide</a>.</p>
+<ul>
+<li>Be sure the <strong>Failsafe</strong>, <strong>Secure</strong> and <strong>Public Write</strong> flags are set</li>
+<li>Use <code>dummy-trusted-cert-key</code> as the private key file</li>
+<li>Use <code>dummy-trusted-cert</code> as the certification file name
+<div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_ic_1.png" alt="" class="img-responsive"></div></li>
+</ul>
+</div>
+</li>
+<li><p>Go to <strong>Generate Image</strong> and select <strong>Create OTA</strong>. </p>
+<p> You will need to select a <strong>OTA Private Key File Name</strong>. The private key will be used to sign the image.</p>
+<p> </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_image_create_prv_key.png" alt="" class="img-responsive"></div><p></p>
+<p> You may use the demo-only private key which is available in the SDK: <code>simplelink_cc32xx_sdk_x_xx_xx_xx\tools\cc32xx_tools\ota-example-cert\dummy_ota_vendor_key.der</code>.</p>
+<p> Or you can create your own private and public key that uses elliptic curve cryptography (ECDSA SECP256R1). This can be done using the following openssl commands:</p>
+<div class="bs-callout bs-callout-warning "><h4><span style="vertical-align: middle;">Generate the private key
+</span></h4>
+<p>     <code>openssl ecparam -name prime256v1 -genkey -param_enc explicit -out ota_vendor_key.pem</code></p>
+</div>
+<div class="bs-callout bs-callout-warning "><h4><span style="vertical-align: middle;">Generate the public certifcate
+</span></h4>
+<p>     <code>openssl req -new -x509 -key ota_vendor_key.pem -out ota_vendor_cert.pem -days 730</code></p>
+<p>     You may answer the Certificate Signing Request (CSR) questions or simply choose the defaults.</p>
+</div>
+<p> The tool will sign the binary image and will generate a tar file in a format defined by the OTA library. The timestamp for the image will be automatically generated as well.
+ </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/btn_ic_genimage.png" alt="" class="img-responsive"></div><p></p>
+</li>
+</ol>
+<h2 id="task-5-creating-and-configuring-the-cdn-server">Task 5: Creating and Configuring the CDN server</h2>
+<ol>
+<li><p>You will need a CDN (Dropbox) account for this demo. Follow the steps in chapter 8.1 of the <a href="http://www.ti.com/lit/swra510">CC3x20 OTA Application Report</a> to create a Dropbox application.
+ Go through steps 1-6 in the application report, and drop the newly created tar file in the OTA vendor directory (called <code>OTA_R2_MCU_FLASH</code>).
+     </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_dropbox_1.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>In "ota/otauser.h", update the CDN server parameter. This example uses the Dropbox account:</p>
+<ul>
+<li><p>Use the following CDN server parameters:</p>
+<ul>
+<li><code>#define OTA_SERVER_TYPE</code> &nbsp; <code>OTA_SERVER_DROPBOX_V2</code></li>
+<li><code>#define OTA_VENDOR_DIR</code> &nbsp; <code>"OTA_R2_MCU_FLASH"</code></li>
+</ul>
+</li>
+<li><p>The following is defined under the <code>DROPBOX</code> section:</p>
+<ul>
+<li><code>#define OTA_VENDOR_TOKEN</code> &nbsp; <code>"&lt;Dropbox generated access token&gt;"</code></li>
+</ul>
+</li>
+<li><p>Set <code>OTA_SERVER_ROOT_CA_CERT</code> (see task 2).</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_serverdropbox.png" alt="" class="img-responsive"></div><p></p>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="task-6-running-the-ota-application">Task 6: Running the OTA Application</h2>
+<ol>
+<li><p>Open a terminal emulation program such as TeraTerm and select the XDS110 Class Application/User UART port.</p>
+<div class="alert alert-warning "><p> <strong>UART Configuration</strong><br>
+ Baud rate: 115200<br>
+ Data: 8 bit<br>
+ Parity: None<br>
+ Stop: 1 bit<br>
+ Flow control: None</p>
+</div>
+</li>
+<li><p>Before rebuilding the application, change the OTA version (<code>APPLICATION_NAME</code> in <code>cloud_ota.h</code>) back to <code>OTA APP</code> (see task 4, step 1). Build and run the project.</p>
+</li>
+<li><p>Verify the successful execution on the debug terminal.
+     </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_terminal_5.png" alt="" class="img-responsive"></div><p></p>
+<p> Note that after a successful OTA sequence the new image should be triggered. It can be monitored through the application name.
+     </p><div class="modal-pop" style="cursor:zoom-in;"><img src="resources/ota_terminal_6.png" alt="" class="img-responsive"></div><p></p>
+</li>
+</ol>
+<h1 id="further-reading">Further Reading</h1>
+<p>After experiencing the OTA application with the CC3x20 device, see the following resources for further assistance in development:</p>
+<ul>
+<li><a href="http://www.ti.com/lit/swru455">CC3x20 Programmer's Guide</a>: This guide contains information on how to use the SimpleLink API for writing WLAN-enabled applications. Please refer to chapter 8 (Secure File System) for important details on the OTA image bundle attributes.</li>
+<li><a href="http://www.ti.com/lit/swra510">CC3x20 OTA Application Report</a>: This document describes the OTA library for the SimpleLink Wireless MCUs, and explains how to prepare a new cloud-ready update to be downloaded by the OTA library.</li>
+<li><a href="http://www.ti.com/lit/swru469">UniFlash ImageCreator User's Guide</a>: The Imaging tool manually stores files on the external serial flash. It is also includes the capability of creating an OTA image (in a tar file) that is ready to be stored in a CDN. Image may include the SimpleLink firmware patch file and any configuration files, security certificates, web pages, and so forth.</li>
+</ul>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Technical support
+</span></h4>
+<p>For any questions, please search on the
+<a href="https://e2e.ti.com/">TI SimpleLink Wi-Fi E2E Forum</a></p>
+</div>
+<div align="center" style="margin-top: 4em; font-size: smaller;">
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="../../web_support/cc_license_icon.png"></a><br>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.</div>
+
+</div><div class="col-xs-4 col-sm-2 sidebar-offcanvas bs-docs-sidebar hidden-print" id="sidebar-overview"><ul class="nav nav-stacked fixed" id="sidebar"><li><a href="#introduction">Introduction</a></li><li><a href="#prerequisites">Prerequisites</a><ul class="nav nav-stacked"><li><a href="#completed-material">Completed material</a></li><li><a href="#software">Software</a></li><li><a href="#hardware">Hardware</a></li></ul></li><li><a href="#ota-overview">OTA Overview</a><ul class="nav nav-stacked"><li><a href="#ota-concept">OTA Concept</a></li><li><a href="#ota-system-diagram">OTA System Diagram</a></li><li><a href="#simplelink-ota-library-ota-">SimpleLink OTA Library (ota)</a></li><li><a href="#ota-library-api">OTA Library API</a></li><li><a href="#ota-sample-application">OTA Sample Application</a></li></ul></li><li><a href="#loading-a-pre-built-ota-image">Loading A Pre-Built OTA Image</a><ul class="nav nav-stacked"><li><a href="#task-1-preparing-the-ota-application">Task 1: Preparing the OTA application</a></li><li><a href="#task-2-finding-a-root-certificate">Task 2: Finding a Root Certificate</a></li><li><a href="#task-3-complete-an-ota-update">Task 3: Complete an OTA Update</a></li></ul></li><li><a href="#preparing-an-ota-image">Preparing An OTA Image</a><ul class="nav nav-stacked"><li><a href="#task-4-compiling-and-creating-the-ota-image">Task 4: Compiling and Creating the OTA Image</a></li><li><a href="#task-5-creating-and-configuring-the-cdn-server">Task 5: Creating and Configuring the CDN server</a></li><li><a href="#task-6-running-the-ota-application">Task 6: Running the OTA Application</a></li></ul></li><li><a href="#further-reading">Further Reading</a></li></ul></div></div></div></div>
+
+<link rel="stylesheet" href="../../web_support/highlight/styles/zenburn.css">
+<script src="../../web_support/strapdown/vendor/jquery-1.11.2.min.js"></script>
+<script src="../../web_support/strapdown/vendor/bootstrap.min.js"></script>
+<script src="../../web_support/highlight/highlight.pack.js"></script>
+<script type="text/javascript">document.isPreRendered = true;</script><script src="../../web_support/strapdown/v/0.2/strapdown.js"></script>      <div class="modal" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">        <div class="vertical-alignment-helper">          <div class="modal-dialog vertical-align-center">             <div class="modal-dialog">               <div class="modal-content" style="margin-left: auto;margin-right: auto;">                 <div class="modal-body">                   <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>                   <img src="" class="imagepreview img-responsive">                 </div>              </div>            </div>          </div>        </div>      </div>
+
+
+
+</body></html>

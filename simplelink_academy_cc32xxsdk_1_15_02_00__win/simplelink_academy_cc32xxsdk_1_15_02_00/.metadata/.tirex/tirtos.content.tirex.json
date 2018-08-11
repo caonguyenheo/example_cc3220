@@ -1,0 +1,82 @@
+[
+    {
+        "name": "Basic",
+        "resourceType": "file",
+        "fileType": ".html",
+        "location": "../../modules/tirtos_basics/tirtos_basics.html",
+        "description": "Introductory training to using TI-RTOS in the CCS IDE",
+        "categories": [ "Labs", "TI-RTOS"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+    {
+        "name": "RTOS Concepts",
+        "resourceType": "file",
+        "fileType": ".html",
+        "location": "../../modules/rtos_concepts/rtos_concepts.html",
+        "description": "A general overview of concepts used in Real-Time Operating Systems such as task/threads, scheduling, semaphore",
+        "categories": [ "Lectures", "Real-Time OS"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+    {
+        "name": "POSIX Project Zero",
+        "resourceType": "file",
+        "fileType": ".html",
+        "location": "../../modules/posix_project_zero/posix_project_zero.html",
+        "description": "Introduction to how POSIX is supported in SimpleLink SDKs, creating threads and creating and using message queues",
+        "categories": [ "Labs", "POSIX"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+    {
+        "name": "Project Zero",
+        "resourceType": "file",
+        "fileType": ".html",
+        "location": "../../modules/tidrivers_project_zero/tidrivers_project_zero.html",
+        "description": "An introduction to using TI Drivers within the SimpleLink SDK, a common set of functional peripheral APIs that enable 100% code portability between SimpleLink MCU devices.",
+        "categories": [ "Labs","TI Drivers"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+    {
+        "name": "GUI Composer - JTAG/XDS model",
+        "resourceType": "file",
+        "fileType": ".html",
+        "location": "../../modules/tidrivers_project_zero_GUI_jtag_xds/tidrivers_project_zero_GUI_jtag_xds.html",
+        "description": "Easily create HTML-based graphical user interfaces (GUIs) that feature gauges, sliders, charts & more, to complement your SimpleLink MCU-based applications",
+        "categories": [ "Labs", "TI Drivers"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+    {
+        "name": "GPIO Interrupt",
+        "resourceType": "file",
+        "fileType": ".html",
+        "location": "../../modules/tidrivers_gpio_interrupt/tidrivers_gpio_interrupt.html",
+        "description": "Learn how to setup GPIO interrupts using TI Drivers with the SimpleLink SDK",
+        "categories": [ "Labs", "TI Drivers"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+    {
+        "name": "Porting TI Drivers",
+        "resourceType": "file",
+        "fileType": ".html",
+        "location": "../../modules/ti_drivers_porting/ti_drivers_porting.html",
+        "description": "Shows how to port TI Drivers",
+        "categories": [ "Labs", "TI Drivers"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+    {
+        "name": "Configuring TI Drivers",
+        "resourceType": "file",
+        "fileType": ".html",
+        "location": "../../modules/ti_drivers_config/ti_drivers_config.html",
+        "description": "Shows how to configure TI Drivers",
+        "categories": [ "Labs", "TI Drivers"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    }
+]

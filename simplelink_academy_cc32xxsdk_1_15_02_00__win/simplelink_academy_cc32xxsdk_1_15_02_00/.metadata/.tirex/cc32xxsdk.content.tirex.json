@@ -1,0 +1,101 @@
+[
+    {
+        "name": "CC3220 Project Zero",
+        "resourceType": "file",
+        "fileType": ".html",
+        "location": "../../modules/wifi_project_zero/wifi_project_zero.html",
+        "description": "CC3220 Project Zero: Getting Started with the Network Terminal Example",
+        "categories": [ "Labs", "Wi-Fi"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+    {
+        "name": "CC3220 Portable + Wi-Fi",
+        "resourceType": "file",
+        "fileType": ".html",
+        "location": "../../modules/wifi_portable/wifi_portable.html",
+        "description": "Adding Wi-Fi functionality on top of the SimpleLink MCU SDK common Portable example with the CC3220",
+        "categories": [ "Labs", "Wi-Fi"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+    {
+        "name": "CC3220 Portable plus Wi-Fi files",
+        "resourceType": "folder",
+        "location": "../../modules/projects/wifi_portable",
+        "description": "File resources for CC3220 Portable + Wi-Fi",
+        "categories": [ "Labs", "Wi-Fi"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+	{
+        "name": "Wi-Fi Provisioning",
+        "resourceType": "file",
+		"fileType": ".html",
+        "location": "../../modules/wifi_provisioning/wifi_provisioning.html",
+        "description": "Provisioning: Connecting SimpleLink Wi-Fi Technology to a Network",
+        "categories": [ "Labs", "Wi-Fi"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+    {
+        "name": "Wi-Fi OTA",
+        "resourceType": "file",
+        "fileType": ".html",
+        "location": "../../modules/wifi_ota/wifi_ota.html",
+        "description": "Wireless updates using the SimpleLink Over-The-Air library",
+        "categories": [ "Labs", "Wi-Fi"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+	{
+        "name": "Wi-Fi MQTT",
+        "resourceType": "file",
+		"fileType": ".html",
+        "location": "../../modules/wifi_mqtt/wifi_mqtt.html",
+        "description": "Connect to the cloud with the SimpleLink Wi-Fi MQTT library",
+        "categories": [ "Labs", "Wi-Fi"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+	{
+        "name": "Wi-Fi Secure Sockets",
+        "resourceType": "file",
+		"fileType": ".html",
+        "location": "../../modules/wifi_secure_socket/wifi_secure_socket.html",
+        "description": "Add security and client verification to an unsecured TCP socket",
+        "categories": [ "Labs", "Wi-Fi"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+	{
+        "name": "Wi-Fi Secure File System",
+        "resourceType": "file",
+		"fileType": ".html",
+        "location": "../../modules/wifi_secure_file_system/wifi_secure_file_system.html",
+        "description": "Protect your IP with the SimpleLink Wi-Fi secure file system",
+        "categories": [ "Labs", "Wi-Fi"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+    {
+        "name": "Get weather from Yahoo using Twilio",
+        "resourceType": "file",
+        "fileType": ".html",
+        "location": "../../modules/wifi_temboo_yahoo_weather/wifi_temboo_yahoo_weather.html",
+        "description": "Learn how to use Temboo to generate SimpleLink SDK-based code that interfaces with the Yahoo weather service to get localized weather information.",
+        "categories": [ "Labs", "Wi-Fi"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    },
+    {
+        "name": "IBM IoT QuickStart",
+        "resourceType": "file",
+        "fileType": ".html",
+        "location": "../../modules/ibm-iot-quickstart-training/ibm-iot-quickstart-training.html",
+        "description": "Getting started with IBM IoT Quickstart and the CC3220 LaunchPad",
+        "categories": [ "Labs", "Wi-Fi"],
+        "devices": [ "$(macro_devices_all)" ],
+        "devtools": [ "$(macro_devtools_all)" ]
+    }
+]

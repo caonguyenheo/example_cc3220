@@ -1,0 +1,20 @@
+[
+     {
+          "arraymacro":  "macro_devices_all",
+          "value":        [
+                              "CC3220S",
+                              "CC3220SF",
+                              "CC3200"
+                          ],
+          "comment":     "all sdk families"
+          },
+          {
+          "arraymacro":  "macro_devtools_all",
+          "value":       [
+                              "CC3220S-LAUNCHXL",
+                              "CC3220SF-LAUNCHXL",
+                              "CC3200-LAUNCHXL"
+                          ],
+          "comment":     "all sdk devtools"
+     }
+]

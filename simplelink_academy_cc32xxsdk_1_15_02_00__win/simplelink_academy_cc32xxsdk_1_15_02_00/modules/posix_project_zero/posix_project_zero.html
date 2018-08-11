@@ -1,0 +1,682 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>POSIX Project Zero</title>
+<link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/ubuntu-regular-woff.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/fonts/glyphicons-halflings-regular.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/united2.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/themes/bootstrap-responsive.min.css"><link rel="stylesheet" href="../../web_support/strapdown/v/0.2/strapdown.css"><link rel="shortcut icon" type="image/x-icon" href="../../.metadata/favicon.ico"></head>
+
+<!-- START PRE -->
+
+
+
+
+
+
+<!-- END PRE -->
+
+<body style=""><div class="container"><nav class="navbar navbar-default navbar-static-top"><div class="container-fluid"> <div class="navbar-header">  <div id="headline" class="navbar-brand">POSIX Project Zero</div> </div> </div></nav><div class="container"><div class="row row-offcanvas row-offcanvas-left"><div class="col-xs-12 col-sm-9" id="content"><h1 id="introduction">Introduction</h1>
+<p>POSIX is an IEEE industry API standard for OS compatibility. The <a href="http://www.ti.com/simplelink">SimpleLink™ software development kits (SDKs)</a> has both TI-RTOS and FreeRTOS support. It also offers POSIX support on top of either of these RTOS's. This allows applications to be independent of the underlying RTOS.</p>
+<p>This workshop provides a simple introduction to using POSIX with the SimpleLink SDK. You will use TI Resource Explorer, the SimpleLink SDK, and CCS Cloud to modify a project and run it on a SimpleLink LaunchPad™ Development Kit. The goal for this project is to familiarize you with some POSIX APIs and concepts typically used in multithreaded applications.</p>
+<p><strong>Here's what we'll learn:</strong></p>
+<ul>
+<li>How POSIX is supported with SimpleLink SDK.</li>
+<li>The basics for creating POSIX threads and controlling their priorities.</li>
+<li>The basics for creating and using POSIX message queues.</li>
+</ul>
+<h1 id="prerequisites">Prerequisites</h1>
+<h2 id="recommended-background-reading">Recommended background reading</h2>
+<ul>
+<li>SimpleLink Academy: <a href="../tidrivers_project_zero/tidrivers_project_zero.html">TI Drivers Project Zero</a></li>
+<li>SimpleLink Academy: <a href="../rtos_concepts/rtos_concepts.html">RTOS Concepts</a></li>
+<li>SimpleLink SDK Quick Start Guide</li>
+</ul>
+<h2 id="software-for-development">Software for development</h2>
+<p>You can follow this tutorial using either of the following:</p>
+<ul>
+<li>Web browser to access <a href="http://dev.ti.com/tirex/#/">TI Resource Explorer</a> and <a href="https://dev.ti.com/ide">CCS Cloud</a>.</li>
+<li>Desktop/offline tools if you have downloaded and installed the Code Composer Studio (CCS) IDE and the SimpleLink SDK for your LaunchPad.</li>
+</ul>
+<h2 id="hardware-requirements">Hardware requirements</h2>
+<p>The TI Drivers are compatible across the entire portfolio of SimpleLink MCU devices. So, you can use this workshop with any MSP432, CC32xx, or CC26xx/CC13xx LaunchPad Development Kit.</p>
+<h1 id="posix-support-in-simplelink-sdk">POSIX Support in SimpleLink SDK</h1>
+<p>POSIX is not an RTOS. It resides on top of either TI-RTOS or FreeRTOS. As you can see with the following diagram, POSIX hides the underlying RTOS from the application.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/posix_diagram.png" alt="" class="img-responsive"></div><p></p>
+<p>The SimpleLink SDK supports the following POSIX sets of APIs.</p>
+<ul>
+<li>Pthread (includes mutexes, barriers, condition variables and read-write locks).</li>
+<li>Semaphores</li>
+<li>Clocks/Timers/sleep</li>
+<li>Message Queue</li>
+</ul>
+<p>Please note, not all POSIX APIs are supported in the SimpleLink SDK. For a more details list of the supported APIs and restrictions, please refer to the <a href="http://processors.wiki.ti.com/index.php/SYS/BIOS_POSIX_Thread_%28pthread%29_Support">POSIX Thread (pthread) Support</a> Texas Instruments wiki page.</p>
+<h1 id="setting-up-the-example-project">Setting up the example project</h1>
+<p>We will begin with a simple example that uses the UART driver to echo back to the console. We'll then extend that example to add an alarmThread. Once the alarmThread is integrated into the example, your typing an 'X' on the UART console will cause a message to be sent to the alarmThread, which then lights an LED. We'll see how to add in several different POSIX APIs to add this capability.</p>
+<h2 id="task-1-importing-uartecho-with-ti-resource-explorer">Task 1: Importing "uartecho" with TI Resource Explorer</h2>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">If you are using CCS Cloud, you may be asked to download and install browser extensions.
+</span></h4>
+<p>Chrome is the recommended browser for developing with CCS Cloud.</p>
+</div>
+<div class="bs-callout bs-callout-warning "><h4><span class="glyphicon glyphicon-exclamation-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Before you start
+</span></h4>
+<p>If you haven't yet gone through the <a href="../tidrivers_project_zero/tidrivers_project_zero.html">TI Drivers Project Zero</a> workshop, we recommend that you do that first. We'll move quickly through the steps introduced in that workshop here.</p>
+</div>
+<ol>
+<li><p>Open TI Resource Explorer (either in a <a href="http://dev.ti.com/tirex/#/">web browser</a> or within an installed version of CCS). In the Search box, type "uartecho" and press <strong>Enter</strong>.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/search_uartecho.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>You will see a list of products that include the simple "uartecho" example, which uses the TI Driver for the UART to echo back to the console. Expand the tree for your device family as shown below until you see the "uartecho" example. Notice that examples are provided for both the FreeRTOS and TI-RTOS kernels (for device families where FreeRTOS is supported) and for both the CCS compiler and the GCC compiler.</p>
+<p>Under the SimpleLink product for your device family, expand <code>Examples &gt; Development Tools &gt; [LaunchPad] &gt; TI Drivers &gt; uartecho &gt; TI-RTOS &gt; CCS Compiler &gt; uartecho</code></p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/search_expand.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>Import the uartecho example into CCS Cloud by clicking the cloud icon when the project folder is highlighted.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/import_trex.png" alt="" class="img-responsive"></div><p></p>
+<p>If you have not already opened <a href="https://dev.ti.com/ide">CCS Cloud</a>, you will be prompted for your myTI account password. Then, the example will be imported. The uartecho and kernel project will both imported.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/projects_in_cloud.png" alt="" class="img-responsive"></div><p></p>
+</li>
+</ol>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">For installed IDEs
+</span></h4>
+<p>If you'd like to import the example into a traditional offline IDE such as CCS or IAR Workbench, click the Download icon to download the entire SimpleLink SDK, which you can use to import the "uartecho" example project into your IDE.</p>
+</div>
+<h2 id="task-2-exploring-the-uartecho-example">Task 2. Exploring the uartecho example</h2>
+<p>As with all TI Driver examples, uartecho is packaged with:</p>
+<ul>
+<li><code>README.html</code>, which you should read to learn how to run the example.</li>
+<li><code>Board.html</code>, which shows where hardware resources are located on your board and how they can be accessed in your software (for example, on-board LEDs and pushbuttons).</li>
+</ul>
+<p>The example contains a number of .c and .h files, but the files you will be modifying in this workshop are:</p>
+<ul>
+<li><code>main_tirtos.c</code></li>
+<li><code>uartecho.c</code></li>
+</ul>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">For FreeRTOS users
+</span></h4>
+<p>If you chose to import a FreeRTOS version of the example, the file that contains main() is called <code>main_freertos.c</code> instead of <code>main_tirtos.c</code>.</p>
+</div>
+<h3 id="the-main_tirtos-c-file">The main_tirtos.c file</h3>
+<p>First let's take a look at the <code>main_tirtos.c</code> source file -- simply double-click the file to open it in CCS Cloud.</p>
+<p>The #include statements and definitions prior to <code>main()</code> are as follows:</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_1')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_1" class="lang-c hljs cpp">  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdint.h&gt;</span>
+
+  <span class="hljs-comment">/* POSIX Header files */</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;pthread.h&gt;</span>
+
+  <span class="hljs-comment">/* RTOS header files */</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/sysbios/BIOS.h&gt;</span>
+
+  <span class="hljs-comment">/* Example/Board Header files */</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> "Board.h"</span>
+
+  <span class="hljs-keyword">extern</span> <span class="hljs-keyword">void</span> *mainThread(<span class="hljs-keyword">void</span> *arg0);
+
+  <span class="hljs-comment">/* Stack size in bytes */</span>
+  <span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> THREADSTACKSIZE    1024</span>
+</code></pre><span class="code-title"><p><strong>main_tirtos.c</strong></p>
+</span></div></div>
+<ul>
+<li><code>&lt;pthread.h&gt;</code> is included so that the POSIX APIs are available.</li>
+<li><code>&lt;ti/sysbios/BIOS.h&gt;</code> is included so that the TI-RTOS Kernel is available. TI-RTOS uses a hierarchical module naming convention relative to <code>&lt;SDK_install_dir&gt;\kernel\tirtos\packages</code>, so the <code>BIOS.h</code> file is located in <code>&lt;SDK_install_dir&gt;\kernel\tirtos\packages\ti\sysbios</code>.</li>
+<li><code>"Board.h"</code> is located in the uartecho project. It maps device-specific constants for accessing peripherals to device-independent constants used in the examples. For example, it maps <code>Board_GPIO_LED0</code> to <code>CC3220S_LAUNCHXL_GPIO_LED_D7</code> for the CC3220S.</li>
+<li><code>mainThread()</code> is the function defined in <code>uartecho.c</code>, which is run by a thread created in main().</li>
+<li><code>THREADSTACKSIZE</code> specifies the size of the stack (in bytes) that is allocated for the mainThread.</li>
+</ul>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">For FreeRTOS users
+</span></h4>
+<p>The <code>&lt;FreeRTOS.h&gt;</code> and <code>&lt;task.h&gt;</code> headers would be included instead of <code>&lt;ti/sysbios/BIOS.h&gt;</code>.</p>
+</div>
+<p>  Now, let's look at the contents of the <code>main()</code> function. This is where we begin to see POSIX APIs. Details about using POSIX threads with the TI-RTOS Kernel and FreeRTOS through the SimpleLink SDK are provided in the <a href="http://processors.wiki.ti.com/index.php/SYS/BIOS_POSIX_Thread_%28pthread%29_Support">POSIX Thread (pthread) Support</a>. For more detail, see the <a href="http://pubs.opengroup.org/onlinepubs/9699919799/">official specification</a> and documentation of the <a href="https://computing.llnl.gov/tutorials/pthreads/">generic implementation</a>.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_2')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_2" class="lang-c hljs cpp">  <span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-keyword">void</span>)</span>
+  </span>{
+      pthread_t           thread;
+      pthread_attr_t      attrs;
+      <span class="hljs-keyword">struct</span> sched_param  priParam;
+      <span class="hljs-keyword">int</span>                 retc;
+      <span class="hljs-keyword">int</span>                 detachState;
+
+      <span class="hljs-comment">/* Call driver init functions */</span>
+      Board_initGeneral();
+
+      <span class="hljs-comment">/* Set priority and stack size attributes */</span>
+      pthread_attr_init(&amp;attrs);
+      priParam.sched_priority = <span class="hljs-number">1</span>;
+
+      detachState = PTHREAD_CREATE_DETACHED;
+      retc = pthread_attr_setdetachstate(&amp;attrs, detachState);
+      <span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+          <span class="hljs-comment">/* pthread_attr_setdetachstate() failed */</span>
+          <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+      }
+
+      pthread_attr_setschedparam(&amp;attrs, &amp;priParam);
+
+      retc |= pthread_attr_setstacksize(&amp;attrs, THREADSTACKSIZE);
+      <span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+          <span class="hljs-comment">/* pthread_attr_setstacksize() failed */</span>
+          <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+      }
+
+      retc = pthread_create(&amp;thread, &amp;attrs, mainThread, NULL);
+      <span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+          <span class="hljs-comment">/* pthread_create() failed */</span>
+          <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+      }
+
+      BIOS_start();
+
+      <span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);
+  }
+</code></pre><span class="code-title"><p><strong>main_tirtos.c</strong></p>
+</span></div></div>
+<p>  In general, the <code>main()</code> function does the following:</p>
+<ul>
+<li><p><code>Board_initGeneral()</code> initializes the board. The <code>"Board.h"</code> file maps this device-independent function to a device-specific function. The device-specific function is defined in a device-specific file that is part of your project.</p>
+<p>For example, <code>CC2640R2_LAUNCHXL.c</code> contains the <code>CC2640R2_LAUNCHXL_initGeneral()</code> function, which initializes the Power Manager and verifies that pins can be accessed. You can add board startup steps to this function if necessary.</p>
+</li>
+<li>The <code>main()</code> function then sets attributes for and creates a POSIX thread. The process of creating a thread is described in more detail below.</li>
+<li><code>BIOS_start()</code> runs the TI-RTOS Kernel. That is, it causes the kernel's scheduler to take over, and threads that have been created run according to the rules of the scheduler. If this were a FreeRTOS version of the same example, the <code>vTaskStartScheduler()</code> function would be run instead.</li>
+<li>The <code>BIOS_start()</code> function never returns, but <code>return(0)</code> is included for completeness.</li>
+</ul>
+<p><strong>See how the POSIX thread was created</strong></p>
+<p>The <code>pthread_attr_init()</code> function initializes the <code>pthread_attr_t</code> object pointed to by <code>attrs</code>. Its fields are set to their default values.</p>
+<p>The <code>priParam.sched_priority</code> field is set to 1. This is the lowest thread priority.</p>
+<p>The <code>pthread_attr_setdetachstate()</code> function sets the state of the thread to be created as <code>PTHREAD_CREATE_DETACH</code>, because you won't be calling <code>pthread_detach()</code> and <code>pthread_join()</code> to pause and resume execution of this thread.</p>
+<p>The <code>pthread_attr_setstacksize()</code> function sets the size of the stack (in bytes) that will be allocated for the mainThread.</p>
+<p>Once all these attributes have been set, the <code>pthread_create()</code> function creates the thread. The thread uses the <code>attrs</code> set of attributes and the <code>mainThread</code> will be the function run by the thread. If you wanted to pass information to the thread function, you could pass something other than NULL as the final function argument. The ID of a successfully created thread is stored in <code>thread</code>.</p>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Corresponding TI-RTOS Kernel code
+</span></h4>
+<p>In TI-RTOS Kernel terms, this example creates a Task object, whose function runs at a higher priority than the Idle thread. If you were constructing this Task with TI-RTOS Kernel APIs instead of POSIX, the code could look like this:</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_3')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_3" class="lang-c hljs cpp">  <span class="hljs-comment">/* Construct BIOS Task */</span>
+  Task_Struct task0Struct;
+  Char task0Stack[THREADSTACKSIZE];
+
+  ...
+
+  Task_Params taskParams;
+
+  Task_Params_init(&amp;taskParams);
+  taskParams.priority = <span class="hljs-number">1</span>;
+  taskParams.stackSize = THREADSTACKSIZE;
+  taskParams.<span class="hljs-built_in">stack</span> = &amp;task0Stack;
+  taskParams.instance-&gt;name = <span class="hljs-string">"echo"</span>;
+  Task_construct(&amp;task0Struct, (Task_FuncPtr)mainThread, &amp;taskParams, NULL);
+</code></pre><span class="code-title"><p>TI-RTOS way to create a thread (aka Task)</p>
+</span></div></div>
+<p>  The above code also provides the stack to minimize memory allocation.</p>
+</div>
+<h3 id="the-uartecho-c-file">The uartecho.c file</h3>
+<p>Now let's look at the <code>uartecho.c</code> file, which contains the <code>mainThread()</code> function, which is run by the thread created in <code>main()</code>.</p>
+<p>The thread function performs the following actions before dropping into a loop where the UART is echoed continuously.</p>
+<ul>
+<li>Initializes the GPIO driver.</li>
+<li>Initializes the UART driver.</li>
+<li>Turns on the board's LED by writing to the GPIO driver.</li>
+<li>Creates a UART object that will send characters to a serial session connected to a COM port (See <code>README.html</code> for more details).</li>
+<li>Opens the UART object.</li>
+<li>Writes "Echoing characters:" to the UART object.</li>
+</ul>
+<p>Once in the while loop, the function:</p>
+<ul>
+<li>Reads a single character from the UART object (the serial session)</li>
+<li><p>Writes a single character back to the UART object.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_4')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_4" class="lang-c hljs cpp"><span class="hljs-keyword">void</span> *mainThread(<span class="hljs-keyword">void</span> *arg0)
+{
+  <span class="hljs-keyword">char</span>        input;
+  <span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span>  echoPrompt[] = <span class="hljs-string">"Echoing characters:\r\n"</span>;
+  UART_Handle uart;
+  UART_Params uartParams;
+
+  <span class="hljs-comment">/* Call driver init functions */</span>
+  GPIO_init();
+  UART_init();
+
+  <span class="hljs-comment">/* Turn on user LED */</span>
+  GPIO_write(Board_GPIO_LED0, Board_GPIO_LED_ON);
+
+  <span class="hljs-comment">/* Create a UART with data processing off. */</span>
+  UART_Params_init(&amp;uartParams);
+  uartParams.writeDataMode = UART_DATA_BINARY;
+  uartParams.readDataMode = UART_DATA_BINARY;
+  uartParams.readReturnMode = UART_RETURN_FULL;
+  uartParams.readEcho = UART_ECHO_OFF;
+  uartParams.baudRate = <span class="hljs-number">115200</span>;
+
+  uart = UART_open(Board_UART0, &amp;uartParams);
+
+  <span class="hljs-keyword">if</span> (uart == NULL) {
+      <span class="hljs-comment">/* UART_open() failed */</span>
+      <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+  }
+
+  UART_write(uart, echoPrompt, <span class="hljs-keyword">sizeof</span>(echoPrompt));
+
+  <span class="hljs-comment">/* Loop forever echoing */</span>
+  <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>) {
+      UART_read(uart, &amp;input, <span class="hljs-number">1</span>);
+      UART_write(uart, &amp;input, <span class="hljs-number">1</span>);
+  }
+}
+</code></pre><span class="code-title"><p><strong>uartecho.c</strong></p>
+</span></div></div>
+</li>
+</ul>
+<h2 id="task-3-building-and-testing-uartecho">Task 3: Building and testing uartecho</h2>
+<p>Before we begin modifying the example, let's test it to verify that it runs.</p>
+<ol>
+<li><p>To build your project in CCS Cloud, simply click the hammer icon. This compiles your code in the cloud and provides a .out file, which you can flash into your device. Alternatively, you can click the Debug icon, which compiles your code and flashes your hardware. It will also jump you into a debug session, where you can step through your code, set breakpoints and watch variables.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/BUILD.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>To program your LaunchPad, click the "Run" button in CCS Cloud. This builds your project and flashes your hardware with the newly compiled image.</p>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/run_icon.png" alt="" class="img-responsive"></div><p></p>
+</li>
+<li><p>See the <code>README.html</code> and <code>Board.html</code> files in your project for instructions about running the uartecho example.</p>
+</li>
+</ol>
+<h1 id="extending-your-code-example">Extending your code example</h1>
+<p>Now we can extend the example to turn on an LED when you type an 'X' on the UART console.</p>
+<p>To send an alarm message, we'll use a POSIX message queue with a new POSIX thread called alarmThread. In response to a message on the message queue, this alarmThread will cause an LED on the board to light up.</p>
+<p>So, to summarize the changes we'll need to make:</p>
+<ol>
+<li><code>main()</code> needs to open a POSIX message queue that will be used to send messages between threads.</li>
+<li><code>main()</code> needs to create a POSIX thread to receive and respond to the messages that will be sent. We'll set this to a higher priority so that the alarm will be serviced quickly. The thread to service the alarm will have a function called <code>alarmThread()</code>.</li>
+<li><code>mainThread()</code> needs to check the input character received from the <code>UART_read()</code>. If it is an 'X', it should send a message on the message queue. Otherwise, it should echo the character typed to the UART as usual.</li>
+<li>A new function called <code>alarmThread()</code> needs to be created to service the alarm. We'll put this in a separate file called <code>alarm.c</code>.</li>
+</ol>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Communication between threads
+</span></h4>
+<p>Other POSIX tools for synchronizing thread access to shared resources include mutexes, barriers, condition variables, read-write locks, semaphores, and timers.</p>
+</div>
+<p>Remember that details about using POSIX threads with the TI-RTOS Kernel and FreeRTOS through the SimpleLink SDK are provided in the <a href="http://processors.wiki.ti.com/index.php/SYS/BIOS_POSIX_Thread_%28pthread%29_Support">POSIX Thread (pthread) Support</a>. For more detail, see the <a href="http://pubs.opengroup.org/onlinepubs/9699919799/">official specification</a> and documentation of the <a href="https://computing.llnl.gov/tutorials/pthreads/">generic implementation</a>.</p>
+<h2 id="task-4-opening-a-posix-message-queue">Task 4: Opening a POSIX message queue</h2>
+<p>POSIX message queues support communication between threads. To enable use of message queues and threads, the file needs to include the header file for POSIX message queues, which is <code>mqueue.h</code>. In addition, the GPIO driver needs to be initialized so that we can make sure the LED is off when the message queue is opened.</p>
+<ol>
+<li>We'll add code to <code>main_tirtos.c</code> to open the POSIX message queue. Open that file (or <code>main_freertos.c</code>) for editing.</li>
+<li><p>Add the following statements to the list of #includes before <code>main()</code>:</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_5')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_5" class="lang-c hljs cpp"><span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;mqueue.h&gt;</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/drivers/GPIO.h&gt;</span>
+</code></pre><span class="code-title"><p><strong>main_tirtos.c</strong></p>
+</span></div></div>
+</li>
+<li><p>Some constants and a global variable are needed in order to use the message queue. Add these statements just before the beginning of <code>main()</code>:</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_6')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_6" class="lang-c hljs cpp"><span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> MSG_SIZE sizeof(int)</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> MSG_NUM  4</span>
+
+mqd_t mqdes;
+</code></pre><span class="code-title"><p><strong>main_tirtos.c</strong></p>
+</span></div></div>
+<p>The <code>mqdes</code> variable will receive the message queue descriptor used to access the message queue by the threads. Note: we have this as a global variable to make sure the memory stays persistent.</p>
+</li>
+<li><p>Add the following declaration to the declarations within <code>main()</code>. The <code>mqAttrs</code> structure allows you to specify message queue flags, the maximum number of messages, and the message size for the message queue.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_7')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_7" class="lang-c hljs cpp"><span class="hljs-keyword">struct</span> mq_attr      mqAttrs;
+</code></pre><span class="code-title"><p><strong>main_tirtos.c</strong></p>
+</span></div></div>
+</li>
+<li><p>Add the following code after the call to <code>Board_initGeneral()</code>:</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_8')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_8" class="lang-c hljs cpp">GPIO_init();
+
+GPIO_write(Board_GPIO_LED0, Board_GPIO_LED_OFF);
+
+mqAttrs.mq_maxmsg = MSG_NUM;
+mqAttrs.mq_msgsize = MSG_SIZE;
+mqAttrs.mq_flags = <span class="hljs-number">0</span>;
+mqdes = mq_open (<span class="hljs-string">"alarm"</span>, O_RDWR | O_CREAT,
+                <span class="hljs-number">0664</span>, &amp;mqAttrs);
+<span class="hljs-keyword">if</span> (mqdes == (mqd_t)-<span class="hljs-number">1</span>) {
+  <span class="hljs-comment">/* mq_open() failed */</span>
+  <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+}
+</code></pre><span class="code-title"><p><strong>main_tirtos.c</strong></p>
+</span></div></div>
+<p>This code performs the following:</p>
+<ul>
+<li>Initializes the GPIO driver. Previously, this was done in <code>mainThread()</code>, so we will need to remove it from there.</li>
+<li>Writes to the GPIO driver to turn off the board's LED (just in case).</li>
+<li>Sets values for the files in the <code>mqAttrs</code> structure that will be used when creating the message queue.</li>
+<li>Calls <code>mq_open()</code> to create and open the message queue. The queue will be named "alarm", created using the provided structure of type <code>mq_attr</code> (O_CREAT), and opened for both receiving and sending messages (O_RDWR). The octal value 0664 provides a required mode argument to the O_CREAT flag. (0664 indicates the user and group can read and write, while all others can only read.)</li>
+<li>Verifies that the message queue was created successfully. If not, it loops forever.</li>
+</ul>
+</li>
+</ol>
+<div class="bs-callout bs-callout-info "><h4><span class="glyphicon glyphicon-info-sign gi-2x" style="vertical-align: middle; margin-right: 0.2em;"></span><span style="vertical-align: middle;">Corresponding TI-RTOS Kernel code
+</span></h4>
+<p>In TI-RTOS Kernel terms, the POSIX message queue is implemented using the Mailbox module.</p>
+</div>
+<h2 id="task-5-creating-a-posix-thread-to-handle-the-message">Task 5: Creating a POSIX thread to handle the message</h2>
+<p>Next, <code>main()</code> needs to create a POSIX thread to receive and respond to the messages that will be sent.</p>
+<ol>
+<li><p>After the declaration of the <code>mainThread()</code> external function, add the following declaration of the <code>alarmThread()</code> external function that will service the alarm.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_9')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_9" class="lang-c hljs cpp"><span class="hljs-keyword">extern</span> <span class="hljs-keyword">void</span> *alarmThread(<span class="hljs-keyword">void</span> *arg0);
+</code></pre><span class="code-title"><p><strong>main_tirtos.c</strong></p>
+</span></div></div>
+</li>
+<li><p>Add the following declaration to the declarations within <code>main()</code>. The "alarm" variable will be used when creating the new thread.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_10')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_10" class="lang-c hljs cpp">pthread_t           alarm;
+</code></pre><span class="code-title"><p><strong>main_tirtos.c</strong></p>
+</span></div></div>
+</li>
+<li><p>Right before the statement that calls <code>BIOS_start()</code>, add the following statements to create another POSIX thread. This thread will have a higher priority so that the alarm can be serviced ahead of echoing other characters that have been typed. A higher number indicates a higher priority. Note: we are using the fact that attrs has already been initializated, so we can just change the desired field.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_11')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_11" class="lang-c hljs cpp"><span class="hljs-comment">/*
+*  Make the alarm thread a higher priority.
+*/</span>
+priParam.sched_priority = <span class="hljs-number">2</span>;
+pthread_attr_setschedparam(&amp;attrs, &amp;priParam);
+
+retc = pthread_create(&amp;alarm, &amp;attrs, alarmThread, (<span class="hljs-keyword">void</span> *)&amp;mqdes);
+<span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+  <span class="hljs-comment">/* pthread_create() failed */</span>
+  <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+}
+</code></pre><span class="code-title"><p><strong>main_tirtos.c</strong></p>
+</span></div></div>
+<p>Notice that the call to <code>pthread_create()</code> passes the message queue descriptor <code>mqdes</code> to the thread. This allows the thread to access the message queue.</p>
+</li>
+<li><p>The existing <code>mainThread()</code> will also need to access the message queue. So, modify the first call to <code>pthread_create()</code> to the following (change the <code>NULL</code> to <code>(void *)&amp;mqdes</code>):</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_12')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_12" class="lang-c hljs cpp">retc = pthread_create(&amp;thread, &amp;attrs, mainThread, (<span class="hljs-keyword">void</span> *)&amp;mqdes);
+</code></pre><span class="code-title"><p><strong>main_tirtos.c</strong></p>
+</span></div></div>
+</li>
+<li><p>Save the <code>main_tirtos.c</code> file.</p>
+</li>
+<li><p>Here is the full source for <code>main_tirtos.c</code> if you want to confirm (or copy)</p>
+<div class="panel-group">
+  <div class="panel panel-success">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle collapsed" data-toggle="collapse" href="#expandable_-full-main_tirtos-c-source-"><p> Full <code>main_tirtos.c</code> source</p>
+</a>
+      </h4>
+    </div>
+    <div id="expandable_-full-main_tirtos-c-source-" class="panel-collapse collapse">
+      <div class="panel-body"><div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_13')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_13" class="lang-c hljs cpp"><span class="hljs-comment">/*
+*  ======== main_tirtos.c ========
+*/</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdint.h&gt;</span>
+
+<span class="hljs-comment">/* POSIX Header files */</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;pthread.h&gt;</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;mqueue.h&gt;</span>
+
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/drivers/GPIO.h&gt;</span>
+
+<span class="hljs-comment">/* RTOS header files */</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/sysbios/BIOS.h&gt;</span>
+
+<span class="hljs-comment">/* Example/Board Header files */</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> "Board.h"</span>
+
+<span class="hljs-keyword">extern</span> <span class="hljs-keyword">void</span> *mainThread(<span class="hljs-keyword">void</span> *arg0);
+<span class="hljs-keyword">extern</span> <span class="hljs-keyword">void</span> *alarmThread(<span class="hljs-keyword">void</span> *arg0);
+
+<span class="hljs-comment">/* Stack size in bytes */</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> THREADSTACKSIZE    1024</span>
+
+<span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> MSG_SIZE sizeof(int)</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">define</span> MSG_NUM  4</span>
+
+mqd_t mqdes;
+
+<span class="hljs-comment">/*
+*  ======== main ========
+*/</span>
+<span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-keyword">void</span>)</span>
+</span>{
+  pthread_t           thread;
+  pthread_t           alarm;
+  pthread_attr_t      attrs;
+  <span class="hljs-keyword">struct</span> sched_param  priParam;
+  <span class="hljs-keyword">int</span>                 retc;
+  <span class="hljs-keyword">int</span>                 detachState;
+  <span class="hljs-keyword">struct</span> mq_attr      mqAttrs;
+
+  <span class="hljs-comment">/* Call driver init functions */</span>
+  Board_initGeneral();
+  GPIO_init();
+
+  GPIO_write(Board_GPIO_LED0, Board_GPIO_LED_OFF);
+
+  mqAttrs.mq_maxmsg = MSG_NUM;
+  mqAttrs.mq_msgsize = MSG_SIZE;
+  mqAttrs.mq_flags = <span class="hljs-number">0</span>;
+  mqdes = mq_open (<span class="hljs-string">"alarm"</span>, O_RDWR | O_CREAT,
+                   <span class="hljs-number">0664</span>, &amp;mqAttrs);
+  <span class="hljs-keyword">if</span> (mqdes == (mqd_t)-<span class="hljs-number">1</span>) {
+      <span class="hljs-comment">/* mq_open() failed */</span>
+      <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+  }
+
+  <span class="hljs-comment">/* Set priority and stack size attributes */</span>
+  pthread_attr_init(&amp;attrs);
+  priParam.sched_priority = <span class="hljs-number">1</span>;
+
+  detachState = PTHREAD_CREATE_DETACHED;
+  retc = pthread_attr_setdetachstate(&amp;attrs, detachState);
+  <span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+      <span class="hljs-comment">/* pthread_attr_setdetachstate() failed */</span>
+      <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+  }
+
+  pthread_attr_setschedparam(&amp;attrs, &amp;priParam);
+
+  retc |= pthread_attr_setstacksize(&amp;attrs, THREADSTACKSIZE);
+  <span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+      <span class="hljs-comment">/* pthread_attr_setstacksize() failed */</span>
+      <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+  }
+
+  retc = pthread_create(&amp;thread, &amp;attrs, mainThread, (<span class="hljs-keyword">void</span> *)&amp;mqdes);
+  <span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+      <span class="hljs-comment">/* pthread_create() failed */</span>
+      <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+  }
+
+  <span class="hljs-comment">/*
+   *  Make the alarm thread a higher priority.
+   */</span>
+  priParam.sched_priority = <span class="hljs-number">2</span>;
+  pthread_attr_setschedparam(&amp;attrs, &amp;priParam);
+
+  retc = pthread_create(&amp;alarm, &amp;attrs, alarmThread, (<span class="hljs-keyword">void</span> *)&amp;mqdes);
+  <span class="hljs-keyword">if</span> (retc != <span class="hljs-number">0</span>) {
+      <span class="hljs-comment">/* pthread_create() failed */</span>
+      <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+  }
+
+  BIOS_start();
+
+  <span class="hljs-keyword">return</span> (<span class="hljs-number">0</span>);
+}
+</code></pre><span class="code-title"><p><strong>main_tirtos.c</strong></p>
+</span></div></div>
+</div>
+    </div>
+  </div>
+</div></li>
+</ol>
+<h2 id="task-6-sending-a-posix-message">Task 6: Sending a POSIX message</h2>
+<p>The <code>mainThread()</code> function needs to check the input character received from the <code>UART_read()</code>. If it is an 'X', it should send a message on the message queue. Then it will echo the character typed to the UART as usual.</p>
+<ol>
+<li>Open the <code>uartecho.c</code> file from your CCS project.</li>
+<li><p>Since <code>mainThread()</code> will need to call <code>mq_send()</code>, add the following statement to the list of #include files so that the POSIX module is available.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_14')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_14" class="lang-c hljs cpp"><span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;mqueue.h&gt;</span>
+</code></pre><span class="code-title"><p><strong>uartecho.c</strong></p>
+</span></div></div>
+</li>
+<li><p>In addition, add the following declarations to the declarations at the start of <code>mainThread()</code>.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_15')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_15" class="lang-c hljs cpp">mqd_t      *mqdes = arg0;
+<span class="hljs-keyword">int</span>         msg;
+</code></pre><span class="code-title"><p><strong>uartecho.c</strong></p>
+</span></div></div>
+</li>
+<li><p>Recall that you moved the initialization and first call to the GPIO driver to <code>main()</code>. Delete (or comment out) the following lines from <code>uartecho.c</code>.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_16')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_16" class="lang-c hljs cpp"><span class="hljs-comment">//GPIO_init();</span>
+
+<span class="hljs-comment">/* Turn on user LED */</span>
+<span class="hljs-comment">//GPIO_write(Board_GPIO_LED0, Board_GPIO_LED_ON);</span>
+</code></pre><span class="code-title"><p><strong>uartecho.c</strong></p>
+</span></div></div>
+</li>
+<li><p>Finally, add the following statements between the calls to <code>UART_read()</code> and <code>UART_write()</code>.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_17')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_17" class="lang-c hljs cpp"><span class="hljs-keyword">if</span> (input == <span class="hljs-string">'X'</span>) {
+  msg = <span class="hljs-number">5</span>;
+  mq_send(*mqdes , (<span class="hljs-keyword">char</span> *)&amp;msg, <span class="hljs-keyword">sizeof</span>(msg), <span class="hljs-number">0</span>);
+}
+</code></pre><span class="code-title"><p><strong>uartecho.c</strong></p>
+</span></div></div>
+<p>If an 'X' was typed, <code>mq_send()</code> sends the integer 5 as the message. This value is arbitrary and will not be used by the <code>alarmThread()</code>. However, you could further modify the example to take different actions based on the value of the message passed.</p>
+</li>
+<li><p>Save the <code>uartecho.c</code> file.</p>
+</li>
+<li><p>Here is the full source for <code>uartecho.c</code> if you want to confirm (or copy)</p>
+<div class="panel-group">
+  <div class="panel panel-success">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle collapsed" data-toggle="collapse" href="#expandable_-full-uartecho-c-source-"><p> Full <code>uartecho.c</code> source</p>
+</a>
+      </h4>
+    </div>
+    <div id="expandable_-full-uartecho-c-source-" class="panel-collapse collapse">
+      <div class="panel-body"><div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_18')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_18" class="lang-c hljs cpp"><span class="hljs-comment">/*
+*  ======== uartecho.c ========
+*/</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stdint.h&gt;</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;stddef.h&gt;</span>
+
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;mqueue.h&gt;</span>
+
+<span class="hljs-comment">/* Driver Header files */</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/drivers/GPIO.h&gt;</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/drivers/UART.h&gt;</span>
+
+<span class="hljs-comment">/* Example/Board Header files */</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> "Board.h"</span>
+
+<span class="hljs-comment">/*
+*  ======== mainThread ========
+*/</span>
+<span class="hljs-keyword">void</span> *mainThread(<span class="hljs-keyword">void</span> *arg0)
+{
+  <span class="hljs-keyword">char</span>        input;
+  <span class="hljs-keyword">const</span> <span class="hljs-keyword">char</span>  echoPrompt[] = <span class="hljs-string">"Echoing characters:\r\n"</span>;
+  UART_Handle uart;
+  UART_Params uartParams;
+  mqd_t *mqdes = arg0;
+  <span class="hljs-keyword">int</span> msg;
+
+  <span class="hljs-comment">/* Call driver init functions */</span>
+  UART_init();
+
+  <span class="hljs-comment">/* Create a UART with data processing off. */</span>
+  UART_Params_init(&amp;uartParams);
+  uartParams.writeDataMode = UART_DATA_BINARY;
+  uartParams.readDataMode = UART_DATA_BINARY;
+  uartParams.readReturnMode = UART_RETURN_FULL;
+  uartParams.readEcho = UART_ECHO_OFF;
+  uartParams.baudRate = <span class="hljs-number">115200</span>;
+
+  uart = UART_open(Board_UART0, &amp;uartParams);
+
+  <span class="hljs-keyword">if</span> (uart == NULL) {
+      <span class="hljs-comment">/* UART_open() failed */</span>
+      <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>);
+  }
+
+  UART_write(uart, echoPrompt, <span class="hljs-keyword">sizeof</span>(echoPrompt));
+
+  <span class="hljs-comment">/* Loop forever echoing */</span>
+  <span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>) {
+      UART_read(uart, &amp;input, <span class="hljs-number">1</span>);
+      <span class="hljs-keyword">if</span> (input == <span class="hljs-string">'X'</span>) {
+          msg = <span class="hljs-number">5</span>;
+          mq_send(*mqdes , (<span class="hljs-keyword">char</span> *)&amp;msg, <span class="hljs-keyword">sizeof</span>(msg), <span class="hljs-number">0</span>);
+      }
+
+      UART_write(uart, &amp;input, <span class="hljs-number">1</span>);
+  }
+}
+</code></pre><span class="code-title"><p><strong>uartecho.c</strong></p>
+</span></div></div>
+</div>
+    </div>
+  </div>
+</div></li>
+</ol>
+<h2 id="task-7-creating-a-thread-function-to-receiving-the-posix-message">Task 7: Creating a thread function to receiving the POSIX message</h2>
+<p>Now we'll create the function to be run by the alarm thread. This function can be placed in a new file called <code>alarm.c</code>.</p>
+<ol>
+<li>In CCS, choose <strong>File &gt; New File</strong>.</li>
+<li><p>Paste the following code into the new file, and save the file as <code>alarm.c</code> in your CCS project.</p>
+<div style="display:inline-block"><div style="display:block"><button type="button" class="btn btn-xs btn-warning float-right select-text" style="margin: 0; position: relative;" onclick="SelectText('codeBlock_19')">Select text</button></div><div class="pre-container"><pre><code id="codeBlock_19" class="lang-c hljs cpp"><span class="hljs-comment">/*
+ *  ======== alarm.c ========
+ */</span>
+
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;pthread.h&gt;</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;mqueue.h&gt;</span>
+
+<span class="hljs-comment">/* Driver Header files */</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> &lt;ti/drivers/GPIO.h&gt;</span>
+
+<span class="hljs-comment">/* Board Header file */</span>
+<span class="hljs-preprocessor">#<span class="hljs-keyword">include</span> "Board.h"</span>
+
+<span class="hljs-comment">/*
+ *  ======== alarmThread ========
+ */</span>
+<span class="hljs-keyword">void</span> *alarmThread(<span class="hljs-keyword">void</span> *arg0)
+{
+    mqd_t *mqdes = arg0;
+    <span class="hljs-keyword">int</span> msg;
+
+    <span class="hljs-keyword">while</span> (mq_receive(*mqdes, (<span class="hljs-keyword">char</span> *)&amp;msg, <span class="hljs-keyword">sizeof</span>(msg), NULL) != -<span class="hljs-number">1</span>) {
+        <span class="hljs-comment">/* Turn on user LED */</span>
+        GPIO_write(Board_GPIO_LED0, Board_GPIO_LED_ON);
+    }
+
+    <span class="hljs-keyword">return</span>(<span class="hljs-number">0</span>);
+}
+</code></pre><span class="code-title"><p><strong>alarm.c</strong></p>
+</span></div></div>
+<p>The call to <code>mq_receive()</code> gets the message from the queue. If the message is received successfully, it calls <code>GPIO_write()</code> to turn on the board's LED.</p>
+</li>
+</ol>
+<h2 id="task-8-run-the-modified-program">Task 8: Run the modified program</h2>
+<ol>
+<li>Build and run the program you have modified. In the console, type some characters other than 'X' and then type 'X'. Watch the LED on the board.</li>
+<li>If you encounter problems, debug the code as necessary and compare your code to the listings above.</li>
+</ol>
+<h1 id="quiz">Quiz</h1>
+<p>Let's see if you picked up some key points...</p>
+<p>You have to use POSIX APIs to use TI Drivers?</p>
+<div class="quiz-toolbar"><div>
+<input type="radio" id="q1.0" class="answer-wrong" name="quiz-1"><label for="q1.0" class="quiz-label " data-toggle="tooltip" data-html="true" data-container="body" data-placement="auto top" data-trigger="click" title="" data-original-title="&lt;p&gt; Incorrect. POSIX APIs have nothing to do with TI Drivers.&lt;/p&gt;
+">Yes </label>
+<input type="radio" id="q1.1" class="answer-right" name="quiz-1"><label for="q1.1" class="quiz-label ">No</label>
+</div></div>
+<p>What TI-RTOS module is used underneath the POSIX message queues</p>
+<div class="quiz-toolbar"><div>
+<input type="radio" id="q2.2" class="answer-wrong" name="quiz-2"><label for="q2.2" class="quiz-label " data-toggle="tooltip" data-html="true" data-container="body" data-placement="auto top" data-trigger="click" title="" data-original-title="&lt;p&gt; Incorrect. Task is underneath pthread&lt;/p&gt;
+">Task </label>
+<input type="radio" id="q2.3" class="answer-right" name="quiz-2"><label for="q2.3" class="quiz-label ">Mailbox</label>
+<input type="radio" id="q2.4" class="answer-wrong" name="quiz-2"><label for="q2.4" class="quiz-label " data-toggle="tooltip" data-html="true" data-container="body" data-placement="auto top" data-trigger="click" title="" data-original-title="&lt;p&gt; Sorry. Harry Potter is not involved.&lt;/p&gt;
+">Magic </label>
+</div></div>
+<h1 id="great-now-what-">Great! Now what?</h1>
+<p>You can extend the modified example in several ways. For example, you might want to pass a different message value to turn off the LED. Or, you could add a POSIX timer to turn off the LED after several seconds.</p>
+<p>Remember that details about using POSIX threads with the TI-RTOS Kernel and FreeRTOS through the SimpleLink SDK are provided in the <a href="http://processors.wiki.ti.com/index.php/SYS/BIOS_POSIX_Thread_%28pthread%29_Support">TI Processors wiki</a>. For more detail, see the <a href="http://pubs.opengroup.org/onlinepubs/9699919799/">official specification</a> and documentation of the <a href="https://computing.llnl.gov/tutorials/pthreads/">generic implementation</a>.</p>
+<p>Also the TI Resource Explorer provides extensive documentation for TI Drivers, the TI-RTOS Kernel, and more. Documentation that may be especially helpful after you have completed this workshop is highlighted below.</p>
+<blockquote>
+<p></p><div class="modal-pop" style="cursor:zoom-in;"><img src="./resources/docs_nowwhat.png" alt="" class="img-responsive"></div><p></p>
+</blockquote>
+<div align="center" style="margin-top: 4em; font-size: smaller;">
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img alt="Creative Commons License" style="border-width:0" src="../../web_support/cc_license_icon.png"></a><br>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.</div>
+
+</div><div class="col-xs-4 col-sm-2 sidebar-offcanvas bs-docs-sidebar hidden-print" id="sidebar-overview"><ul class="nav nav-stacked fixed" id="sidebar"><li><a href="#introduction">Introduction</a></li><li><a href="#prerequisites">Prerequisites</a><ul class="nav nav-stacked"><li><a href="#recommended-background-reading">Recommended background reading</a></li><li><a href="#software-for-development">Software for development</a></li><li><a href="#hardware-requirements">Hardware requirements</a></li></ul></li><li><a href="#posix-support-in-simplelink-sdk">POSIX Support in SimpleLink SDK</a></li><li><a href="#setting-up-the-example-project">Setting up the example project</a><ul class="nav nav-stacked"><li><a href="#task-1-importing-uartecho-with-ti-resource-explorer">Task 1: Importing "uartecho" with TI Resource Explorer</a></li><li><a href="#task-2-exploring-the-uartecho-example">Task 2. Exploring the uartecho example</a><ul class="nav nav-stacked"><li><a href="#the-main_tirtos-c-file">The main_tirtos.c file</a></li><li><a href="#the-uartecho-c-file">The uartecho.c file</a></li></ul></li><li><a href="#task-3-building-and-testing-uartecho">Task 3: Building and testing uartecho</a></li></ul></li><li><a href="#extending-your-code-example">Extending your code example</a><ul class="nav nav-stacked"><li><a href="#task-4-opening-a-posix-message-queue">Task 4: Opening a POSIX message queue</a></li><li><a href="#task-5-creating-a-posix-thread-to-handle-the-message">Task 5: Creating a POSIX thread to handle the message</a></li><li><a href="#task-6-sending-a-posix-message">Task 6: Sending a POSIX message</a></li><li><a href="#task-7-creating-a-thread-function-to-receiving-the-posix-message">Task 7: Creating a thread function to receiving the POSIX message</a></li><li><a href="#task-8-run-the-modified-program">Task 8: Run the modified program</a></li></ul></li><li><a href="#quiz">Quiz</a></li><li><a href="#great-now-what-">Great! Now what?</a></li></ul></div></div></div></div>
+
+
+
+
+<link rel="stylesheet" href="../../web_support/highlight/styles/zenburn.css">
+<script src="../../web_support/strapdown/vendor/jquery-1.11.2.min.js"></script>
+<script src="../../web_support/strapdown/vendor/bootstrap.min.js"></script>
+<script src="../../web_support/highlight/highlight.pack.js"></script>
+<script type="text/javascript">document.isPreRendered = true;</script><script src="../../web_support/strapdown/v/0.2/strapdown.js"></script>      <div class="modal" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">        <div class="vertical-alignment-helper">          <div class="modal-dialog vertical-align-center">             <div class="modal-dialog">               <div class="modal-content" style="margin-left: auto;margin-right: auto;">                 <div class="modal-body">                   <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>                   <img src="" class="imagepreview img-responsive">                 </div>              </div>            </div>          </div>        </div>      </div>
+
+
+</body></html>
